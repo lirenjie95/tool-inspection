@@ -1,0 +1,154 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Test & Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest coverage requests
+
+      - name: Run tests with coverage
+        run: |
+          python -m coverage run --branch -m pytest tests/ -v
+
+      - name: Check coverage (line >= 50%, branch >= 50%)
+        run: |
+          python -m coverage report --include="server/*,client/*" -m
+          # Extract line and branch coverage percentages
+          LINE_COVER=$(python -m coverage report --include="server/*,client/*" | tail -1 | awk '{print $6}' | tr -d '%')
+          BRANCH_COVER=$(python -m coverage report --include="server/*,client/*" | tail -1 | awk '{print $7}' | tr -d '%')
+          echo "Line coverage: ${LINE_COVER}%"
+          echo "Branch coverage: ${BRANCH_COVER}%"
+          # Use Python for numeric comparison to avoid shell issues
+          python -c "
+          import sys
+          line = float('${LINE_COVER}')
+          branch = float('${BRANCH_COVER}')
+          fail = False
+          if line < 50:
+              print(f'FAIL: Line coverage {line}% < 50%')
+              fail = True
+          if branch < 50:
+              print(f'FAIL: Branch coverage {branch}% < 50%')
+              fail = True
+          if fail:
+              sys.exit(1)
+          print(f'PASS: Line coverage {line}%, Branch coverage {branch}%')
+          "
+
+  build-linux:
+    name: Build Linux Executable
+    needs: test
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install PyInstaller
+        run: pip install pyinstaller
+
+      - name: Build Linux executable
+        working-directory: ./server
+        run: |
+          python -m PyInstaller \
+            --name inspection-agent \
+            --onedir \
+            --console \
+            agent.py
+          mkdir -p dist/inspection-agent-linux
+          mv dist/inspection-agent/* dist/inspection-agent-linux/
+          cd dist && tar czvf inspection-agent-linux.tar.gz inspection-agent-linux/
+
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-build
+          path: server/dist/inspection-agent-linux.tar.gz
+
+  build-windows:
+    name: Build Windows Executable
+    needs: test
+    runs-on: windows-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install PyInstaller
+        run: pip install pyinstaller
+
+      - name: Build Windows executable
+        working-directory: ./server
+        run: |
+          python -m PyInstaller `
+            --name inspection-agent `
+            --onedir `
+            --console `
+            agent.py
+          $dist = "dist/inspection-agent-windows"
+          New-Item -ItemType Directory -Force -Path $dist
+          Copy-Item -Path "dist/inspection-agent/*" -Destination $dist -Recurse -Force
+          Compress-Archive -Path "$dist/*" -DestinationPath "dist/inspection-agent-windows.zip" -Force
+        shell: pwsh
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-build
+          path: server/dist/inspection-agent-windows.zip
+
+  release:
+    name: Create GitHub Release
+    needs: [build-linux, build-windows]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Linux artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-build
+          path: ./artifacts
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-build
+          path: ./artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ./artifacts/*
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
