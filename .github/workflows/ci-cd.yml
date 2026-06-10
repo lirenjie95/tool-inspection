@@ -22,7 +22,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pytest coverage requests
+          pip install pytest coverage
+          pip install -r client/requirements.txt
 
       - name: Run tests with coverage
         run: |
@@ -31,26 +32,26 @@ jobs:
       - name: Check coverage (line >= 50%, branch >= 50%)
         run: |
           python -m coverage report --include="server/*,client/*" -m
-          # Extract line and branch coverage percentages
-          LINE_COVER=$(python -m coverage report --include="server/*,client/*" | tail -1 | awk '{print $6}' | tr -d '%')
-          BRANCH_COVER=$(python -m coverage report --include="server/*,client/*" | tail -1 | awk '{print $7}' | tr -d '%')
-          echo "Line coverage: ${LINE_COVER}%"
-          echo "Branch coverage: ${BRANCH_COVER}%"
-          # Use Python for numeric comparison to avoid shell issues
+          python -m coverage json --include="server/*,client/*" -o /tmp/coverage.json
           python -c "
-          import sys
-          line = float('${LINE_COVER}')
-          branch = float('${BRANCH_COVER}')
+          import json, sys
+          with open('/tmp/coverage.json') as f:
+              data = json.load(f)
+          totals = data['totals']
+          line = (totals['covered_lines'] / totals['num_statements'] * 100) if totals['num_statements'] else 100.0
+          branch = (totals['covered_branches'] / totals['num_branches'] * 100) if totals['num_branches'] else 100.0
+          print(f'Line coverage: {line:.1f}%')
+          print(f'Branch coverage: {branch:.1f}%')
           fail = False
           if line < 50:
-              print(f'FAIL: Line coverage {line}% < 50%')
+              print(f'FAIL: Line coverage {line:.1f}% < 50%')
               fail = True
           if branch < 50:
-              print(f'FAIL: Branch coverage {branch}% < 50%')
+              print(f'FAIL: Branch coverage {branch:.1f}% < 50%')
               fail = True
           if fail:
               sys.exit(1)
-          print(f'PASS: Line coverage {line}%, Branch coverage {branch}%')
+          print(f'PASS: Line coverage {line:.1f}%, Branch coverage {branch:.1f}%')
           "
 
   build-linux:

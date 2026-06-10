@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "server"))
 
 from services.disk import collect as collect_disk
 from services.iis import collect as collect_iis
-from agent import HealthHandler, get_health_data
+from agent import HealthHandler, get_health_data, run_server
 
 
 class TestDiskService(unittest.TestCase):
@@ -176,8 +176,8 @@ class TestGetHealthData(unittest.TestCase):
 class TestRunServer(unittest.TestCase):
     """测试 run_server 函数"""
 
-    def test_run_and_keyboard_interrupt(self):
-        """测试服务器启动和 KeyboardInterrupt 关闭"""
+    def test_run_and_shutdown(self):
+        """测试服务器启动和正常关闭"""
         from http.server import HTTPServer
         import threading
         import time
@@ -201,6 +201,15 @@ class TestRunServer(unittest.TestCase):
                 self.assertEqual(resp.status, 200)
         server.shutdown()
         server.server_close()
+
+    def test_keyboard_interrupt(self):
+        """测试 KeyboardInterrupt 正确触发 shutdown"""
+        with patch("agent.HTTPServer") as mock_httpserver:
+            mock_server = MagicMock()
+            mock_httpserver.return_value = mock_server
+            mock_server.serve_forever.side_effect = KeyboardInterrupt()
+            run_server(9999)
+            mock_server.shutdown.assert_called_once()
 
 
 if __name__ == "__main__":
