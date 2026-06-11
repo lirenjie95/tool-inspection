@@ -22,10 +22,10 @@ def collect():
 
 
 def _collect_windows():
-    """Windows: 通过 PowerShell 获取 C: / D: 磁盘信息"""
+    """Windows: 通过 PowerShell 获取所有本地磁盘信息"""
     ps_cmd = (
         "Get-WmiObject Win32_LogicalDisk | "
-        "Where-Object { $_.DeviceID -eq 'C:' -or $_.DeviceID -eq 'D:' } | "
+        "Where-Object { $_.DriveType -eq 3 } | "
         "Select-Object DeviceID, "
         "@{n='FreeSpaceGB';e={[math]::Round($_.FreeSpace/1GB,0)}}, "
         "@{n='SizeGB';e={[math]::Round($_.Size/1GB,0)}} | "
