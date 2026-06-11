@@ -265,7 +265,7 @@ Start-Process python -ArgumentList "agent.py","--port","5000" -WindowStyle Hidde
 ## Linux 支持说明
 
 Agent 已完整支持 Linux。`services/disk.py` 会自动检测操作系统：
-- **Windows**：通过 PowerShell 获取 C:/D: 盘信息
+- **Windows**：通过 PowerShell 获取**所有本地磁盘**信息（自动包含 C:、D:、E: 等）
 - **Linux**：通过 `df -BG` 获取 `/` 和 `/data` 挂载点信息
 
-如需检查其他挂载点，可修改 `services/disk.py` 中的 `mounts` 列表。
+如需在 Linux 上检查其他挂载点，可修改 `services/disk.py` 中的 `mounts` 列表。
