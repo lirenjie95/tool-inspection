@@ -78,6 +78,29 @@ jobs:
             --onedir \
             --console \
             agent.py
+          DIST_DIR="dist/inspection-agent"
+          cat > "$DIST_DIR/start.sh" << 'EOF'
+          #!/bin/bash
+          SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+          cd "$SCRIPT_DIR"
+          ./inspection-agent "$@"
+          EOF
+          chmod +x "$DIST_DIR/start.sh"
+          cat > "$DIST_DIR/inspection-agent.service" << 'EOF'
+          [Unit]
+          Description=Inspection Agent
+          After=network.target
+
+          [Service]
+          Type=simple
+          WorkingDirectory=/opt/inspection-agent
+          ExecStart=/opt/inspection-agent/inspection-agent --port 5000
+          Restart=always
+          RestartSec=5
+
+          [Install]
+          WantedBy=multi-user.target
+          EOF
           mkdir -p dist/inspection-agent-linux
           mv dist/inspection-agent/* dist/inspection-agent-linux/
           cd dist && tar czvf inspection-agent-linux.tar.gz inspection-agent-linux/
@@ -112,10 +135,22 @@ jobs:
             --onedir `
             --console `
             agent.py
-          $dist = "dist/inspection-agent-windows"
-          New-Item -ItemType Directory -Force -Path $dist
-          Copy-Item -Path "dist/inspection-agent/*" -Destination $dist -Recurse -Force
-          Compress-Archive -Path "$dist/*" -DestinationPath "dist/inspection-agent-windows.zip" -Force
+          $dist = "dist/inspection-agent"
+          @"
+          @echo off
+          cd /d "%~dp0"
+          inspection-agent.exe --port 5000
+          pause
+          "@ | Out-File -Encoding utf8 "$dist/start.bat"
+          @"
+          Set WshShell = CreateObject("WScript.Shell")
+          WshShell.Run "inspection-agent.exe --port 5000", 0, False
+          Set WshShell = Nothing
+          "@ | Out-File -Encoding utf8 "$dist/start_hidden.vbs"
+          $winDist = "dist/inspection-agent-windows"
+          New-Item -ItemType Directory -Force -Path $winDist
+          Copy-Item -Path "$dist/*" -Destination $winDist -Recurse -Force
+          Compress-Archive -Path "$winDist/*" -DestinationPath "dist/inspection-agent-windows.zip" -Force
         shell: pwsh
 
       - name: Upload Windows artifact

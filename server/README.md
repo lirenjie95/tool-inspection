@@ -122,7 +122,7 @@ curl http://localhost:5000/health
 }
 ```
 
-### 3. 验证 Agent
+### 验证 Agent
 
 在服务器本地浏览器或 PowerShell 中访问：
 
@@ -142,7 +142,7 @@ Invoke-RestMethod -Uri "http://localhost:5000/health"
 }
 ```
 
-### 4. 防火墙放通
+### 防火墙放通
 
 确保服务器本地防火墙允许入站连接到 Agent 端口（默认 5000）。
 PowerShell 一键放行示例：

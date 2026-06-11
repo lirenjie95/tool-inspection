@@ -55,15 +55,16 @@ EOF
 chmod +x "$DIST_DIR/start.sh"
 
 # 创建 systemd service 文件模板
-cat > "$DIST_DIR/inspection-agent.service" << EOF
+# 默认使用 /opt/inspection-agent 作为部署路径，可根据实际情况修改
+cat > "$DIST_DIR/inspection-agent.service" << 'EOF'
 [Unit]
 Description=Inspection Agent
 After=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=$DIST_DIR
-ExecStart=$DIST_DIR/inspection-agent --port 5000
+WorkingDirectory=/opt/inspection-agent
+ExecStart=/opt/inspection-agent/inspection-agent --port 5000
 Restart=always
 RestartSec=5
 
