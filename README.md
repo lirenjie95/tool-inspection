@@ -42,6 +42,13 @@
 │   ├── build_windows.py      # Windows exe 打包
 │   ├── build_linux.sh        # Linux ELF 打包
 │   └── README.md             # 打包说明
+├── tests/                     # 单元测试
+│   ├── __init__.py
+│   ├── test_client.py
+│   └── test_server.py
+├── .github/
+│   └── workflows/
+│       └── ci-cd.yml          # GitHub Actions CI/CD
 └── README.md                 # 本文件
 ```
 

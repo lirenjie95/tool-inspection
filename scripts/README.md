@@ -5,6 +5,11 @@
 打包脚本用于将 `server/agent.py` 及其依赖转换为**不依赖 Python 环境**的可执行程序，
 方便在没有安装 Python 的服务器上直接运行。
 
+> **CI/CD 自动构建**：本项目配置了 GitHub Actions，在推送 `v*` 标签时会自动构建
+> Windows 和 Linux 可执行文件并发布到 GitHub Release。自动构建的 Release 包中
+> **同样包含** `start.bat`、`start_hidden.vbs`、`start.sh` 和 `inspection-agent.service`
+> 等辅助脚本，可直接下载部署。
+
 ## Windows 打包
 
 ### 环境准备
