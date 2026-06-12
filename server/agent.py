@@ -20,8 +20,10 @@ Windows 后台运行建议:
 """
 
 import argparse
-import platform
 import json
+import logging
+import platform
+import traceback
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
 from services.disk import collect as collect_disk
@@ -32,19 +34,37 @@ from services.memory import collect as collect_memory
 # from services.iis import collect as collect_iis
 
 
+# 配置日志：时间 级别 消息
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+logger = logging.getLogger(__name__)
+
+
+def _safe_collect(name, collector):
+    """安全执行采集函数，单个服务异常不影响整体返回"""
+    try:
+        return collector()
+    except Exception as e:
+        logger.warning(f"采集服务 {name} 失败: {e}")
+        return {"error": str(e), "traceback": traceback.format_exc()}
+
+
 def get_health_data():
     """组装健康检查数据"""
     data = {
         "status": "running",
         "os": platform.system(),
-        "disks": collect_disk(),
-        "cpu": collect_cpu(),
-        "memory": collect_memory(),
+        "disks": _safe_collect("disk", collect_disk),
+        "cpu": _safe_collect("cpu", collect_cpu),
+        "memory": _safe_collect("memory", collect_memory),
     }
 
     # 扩展点：新增服务在此加入返回数据
     # try:
-    #     data["iis"] = collect_iis()
+    #     data["iis"] = _safe_collect("iis", collect_iis)
     # except Exception as e:
     #     data["iis"] = {"error": str(e)}
 
@@ -55,18 +75,8 @@ class HealthHandler(BaseHTTPRequestHandler):
     """HTTP 请求处理器"""
 
     def log_message(self, format, *args):
-        # 覆写为简单日志，可注释掉以下行以完全静默
-        print(f"[{self.log_date_time_string()}] {args[0]}")
-
-    def do_GET(self):
-        if self.path == "/health":
-            try:
-                data = get_health_data()
-                self._send_json(200, data)
-            except Exception as e:
-                self._send_json(500, {"status": "error", "message": str(e)})
-        else:
-            self._send_json(404, {"status": "not_found"})
+        # 使用标准日志库输出访问日志，包含客户端 IP
+        logger.info(f"{self.client_address[0]} - {args[0]}")
 
     def _send_json(self, code, data):
         self.send_response(code)
@@ -74,17 +84,35 @@ class HealthHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(json.dumps(data, ensure_ascii=False).encode())
 
+    def _send_error(self, code, message):
+        """统一的错误响应格式"""
+        self._send_json(code, {"status": "error", "message": message})
+
+    def do_GET(self):
+        if self.path == "/health":
+            try:
+                data = get_health_data()
+                self._send_json(200, data)
+            except Exception as e:
+                logger.error(f"处理 /health 请求时发生错误: {e}")
+                self._send_error(500, str(e))
+        elif self.path == "/ping":
+            # 轻量级存活探测，不执行任何采集
+            self._send_json(200, {"status": "ok"})
+        else:
+            self._send_error(404, "not_found")
+
 
 def run_server(port):
     server = HTTPServer(("0.0.0.0", port), HealthHandler)
-    print(f"Agent 已启动，监听 http://0.0.0.0:{port}/health")
-    print("按 Ctrl+C 停止")
+    logger.info(f"Agent 已启动，监听 http://0.0.0.0:{port}/health")
+    logger.info("按 Ctrl+C 停止")
     try:
         server.serve_forever()
     except KeyboardInterrupt:
-        print("\nAgent 正在停止...")
+        logger.info("Agent 正在停止...")
         server.shutdown()
-        print("Agent 已停止")
+        logger.info("Agent 已停止")
 
 
 if __name__ == "__main__":

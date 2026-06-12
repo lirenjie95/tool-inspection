@@ -8,7 +8,7 @@
 ```
 ┌─────────────────┐      HTTP (内网)      ┌─────────────────┐
 │   本地客户端     │  ──────────────────>  │  服务器 Agent   │
-│  client/main.py │    GET /health        │ server/agent.py │
+│  client/main.py │  GET /health /ping    │ server/agent.py │
 └─────────────────┘                       └─────────────────┘
        │                                          │
        │ 汇总输出                                  │ 本地 PowerShell/df/free
@@ -96,6 +96,11 @@ New-NetFirewallRule -DisplayName "InspectionAgent" -Direction Inbound -Protocol 
 ```
 
 > 详细部署方式（后台服务、计划任务、nssm 等）请参考 `server/README.md`
+
+**Agent 接口：**
+
+- `GET /health`：返回完整健康数据（磁盘、CPU、内存等）
+- `GET /ping`：轻量级存活探测，返回 `{"status": "ok"}`
 
 ### 第二步：在本地配置客户端
 
