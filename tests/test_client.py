@@ -270,6 +270,43 @@ class TestRunInspection(unittest.TestCase):
         self.assertIn("共发现 1 项异常", output_text)
         self.assertEqual(structured["summary"]["total_warnings"], 1)
 
+    @patch("main.SERVERS", [
+        {"role": "db", "ip": "192.168.1.20", "port": 5000, "name": "db-01"},
+    ])
+    @patch("main.WEBS", [])
+    @patch("main.DISK_THRESHOLD_GB", 30)
+    @patch("main.ROLE_DISK_THRESHOLDS_GB", {"db": 50})
+    @patch("main.check_server_agent")
+    def test_db_role_threshold(self, mock_check_server):
+        """测试数据库角色使用更高的阈值"""
+        # 40GB 低于 db 阈值 50，但高于默认阈值 30
+        mock_check_server.return_value = {
+            "_http_ok": True,
+            "status": "running",
+            "disks": [{"DeviceID": "D:", "FreeSpaceGB": 40, "SizeGB": 100}],
+        }
+
+        output_text, structured = run_inspection()
+        self.assertIn("[告警] 磁盘低于阈值 (50GB)", output_text)
+        self.assertIn("磁盘空间不足", output_text)
+        self.assertIn("共发现 1 项异常", output_text)
+        self.assertEqual(structured["summary"]["total_warnings"], 1)
+
+    @patch("main.SERVERS", [
+        {"role": "app", "ip": "192.168.1.10", "port": 5000, "name": "app-01"},
+    ])
+    @patch("main.WEBS", [])
+    @patch("main.DISK_THRESHOLD_GB", 30)
+    @patch("main.check_server_agent")
+    def test_no_disks(self, mock_check_server):
+        """测试无磁盘数据分支"""
+        mock_check_server.return_value = {"_http_ok": True, "status": "running", "disks": []}
+
+        output_text, structured = run_inspection()
+        self.assertIn("运行正常", output_text)
+        self.assertIn("[告警] 磁盘低于阈值", output_text)
+        self.assertEqual(structured["summary"]["total_warnings"], 1)
+
     @patch("main.SERVERS", [])
     @patch("main.WEBS", [
         {"name": "首页", "url": "http://example.com"},

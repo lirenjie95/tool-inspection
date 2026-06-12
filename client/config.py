@@ -36,3 +36,8 @@ WEBS = [
 
 # 磁盘空间告警阈值 (GB)
 DISK_THRESHOLD_GB = 30
+
+# 按角色配置的磁盘阈值，未配置的角色使用 DISK_THRESHOLD_GB
+ROLE_DISK_THRESHOLDS_GB = {
+    "db": 50,   # 数据库服务器阈值更高
+}

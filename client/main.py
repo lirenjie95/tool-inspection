@@ -19,7 +19,7 @@ import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import requests
-from config import SERVERS, WEBS, DISK_THRESHOLD_GB
+from config import SERVERS, WEBS, DISK_THRESHOLD_GB, ROLE_DISK_THRESHOLDS_GB
 
 
 def check_server_agent(server: dict) -> dict:
@@ -103,6 +103,7 @@ def inspect_server(srv: dict, data: dict) -> tuple:
     lines = []
     warnings = []
     name = srv.get("name", srv["ip"])
+    threshold = ROLE_DISK_THRESHOLDS_GB.get(srv["role"], DISK_THRESHOLD_GB)
 
     if data.get("_http_ok") and data.get("status") == "running":
         disks = data.get("disks", [])
@@ -113,8 +114,8 @@ def inspect_server(srv: dict, data: dict) -> tuple:
         if metrics:
             lines.append(f"  -> {metrics}")
         min_free = min((d["FreeSpaceGB"] for d in disks), default=0)
-        if min_free < DISK_THRESHOLD_GB:
-            lines.append(f"  -> [告警] 磁盘低于阈值 ({DISK_THRESHOLD_GB}GB)")
+        if min_free < threshold:
+            lines.append(f"  -> [告警] 磁盘低于阈值 ({threshold}GB)")
             warnings.append(f"{name} ({srv['ip']}): 磁盘空间不足")
         else:
             lines.append(f"  -> 磁盘检查: 通过")

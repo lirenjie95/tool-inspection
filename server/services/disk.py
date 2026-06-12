@@ -48,35 +48,51 @@ def _collect_windows():
 
 def _collect_linux():
     """
-    Linux: 使用 df 获取 / 和 /data 挂载点磁盘信息。
+    Linux: 使用 df 获取所有真实挂载点磁盘信息。
+    自动过滤伪文件系统（如 devtmpfs、tmpfs、overlay 等）。
     """
     import os
     import subprocess
 
-    mounts = ["/", "/data"]
+    # 需要忽略的伪文件系统类型
+    skip_fs_types = {"devtmpfs", "tmpfs", "overlay", "squashfs", "proc", "sysfs", "cgroup"}
     result = []
 
-    for mount in mounts:
-        # 跳过不存在的挂载点（/ 除外）
-        if mount != "/" and not os.path.ismount(mount):
+    try:
+        output = subprocess.check_output(
+            ["df", "-BG"],
+            text=True,
+        ).strip().splitlines()
+    except Exception:
+        output = []
+
+    # 第一行是表头，跳过
+    for line in output[1:]:
+        parts = line.split()
+        # 格式: Filesystem 1G-blocks Used Available Use% Mounted on
+        if len(parts) < 6:
+            continue
+
+        fs_type_or_device = parts[0]
+        mount_point = " ".join(parts[5:]) if len(parts) > 6 else parts[5]
+
+        # 跳过伪文件系统和特殊挂载点
+        if fs_type_or_device in skip_fs_types:
+            continue
+        if mount_point.startswith("/dev") or mount_point.startswith("/sys") or mount_point.startswith("/proc"):
+            continue
+        if not os.path.ismount(mount_point):
             continue
 
         try:
-            output = subprocess.check_output(
-                ["df", "-BG", mount],
-                text=True,
-            ).strip().splitlines()[-1]
-            parts = output.split()
-            # 格式: Filesystem 1G-blocks Used Available Use% Mounted on
-            if len(parts) >= 6:
-                total_gb = int(parts[1].replace("G", ""))
-                free_gb = int(parts[3].replace("G", ""))
-                result.append({
-                    "DeviceID": mount,
-                    "FreeSpaceGB": free_gb,
-                    "SizeGB": total_gb,
-                })
-        except Exception:
+            total_gb = int(parts[1].replace("G", ""))
+            free_gb = int(parts[3].replace("G", ""))
+            result.append({
+                "DeviceID": mount_point,
+                "FreeSpaceGB": free_gb,
+                "SizeGB": total_gb,
+            })
+        except (ValueError, IndexError):
             continue
 
     # 如果什么都没采集到，至少返回根分区占位

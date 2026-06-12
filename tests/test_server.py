@@ -23,23 +23,44 @@ class TestDiskService(unittest.TestCase):
 
     def test_collect_linux(self):
         """测试 Linux 磁盘采集返回 list 结构"""
+        df_output = (
+            "Filesystem 1G-blocks Used Available Use% Mounted on\n"
+            "/dev/disk1 100G 30G 70G 30% /\n"
+            "/dev/disk2 200G 50G 150G 25% /data"
+        )
         with patch("platform.system", return_value="Linux"):
-            with patch("subprocess.check_output", return_value="Filesystem 1G-blocks Used Available Use% Mounted on\n/dev/disk1 100G 30G 70G 30% /"):
-                result = collect_disk()
-                self.assertIsInstance(result, list)
-                self.assertEqual(len(result), 1)
-                self.assertEqual(result[0]["DeviceID"], "/")
-                self.assertIn("FreeSpaceGB", result[0])
-                self.assertIn("SizeGB", result[0])
+            with patch("subprocess.check_output", return_value=df_output):
+                with patch("os.path.ismount", return_value=True):
+                    result = collect_disk()
+                    self.assertIsInstance(result, list)
+                    self.assertEqual(len(result), 2)
+                    device_ids = {r["DeviceID"] for r in result}
+                    self.assertIn("/", device_ids)
+                    self.assertIn("/data", device_ids)
+
+    def test_collect_linux_skip_pseudo_fs(self):
+        """测试 Linux 过滤伪文件系统"""
+        df_output = (
+            "Filesystem 1G-blocks Used Available Use% Mounted on\n"
+            "/dev/disk1 100G 30G 70G 30% /\n"
+            "tmpfs 2G 0G 2G 0% /run\n"
+            "devtmpfs 1G 0G 1G 0% /dev"
+        )
+        with patch("platform.system", return_value="Linux"):
+            with patch("subprocess.check_output", return_value=df_output):
+                with patch("os.path.ismount", return_value=True):
+                    result = collect_disk()
+                    self.assertIsInstance(result, list)
+                    self.assertEqual(len(result), 1)
+                    self.assertEqual(result[0]["DeviceID"], "/")
 
     def test_collect_linux_fallback(self):
         """测试 Linux 无可用挂载点时返回占位数据"""
         with patch("platform.system", return_value="Linux"):
-            with patch("os.path.ismount", return_value=False):
-                with patch("subprocess.check_output", side_effect=Exception("fail")):
-                    result = collect_disk()
-                    self.assertIsInstance(result, list)
-                    self.assertEqual(result[0]["DeviceID"], "/")
+            with patch("subprocess.check_output", side_effect=Exception("fail")):
+                result = collect_disk()
+                self.assertIsInstance(result, list)
+                self.assertEqual(result[0]["DeviceID"], "/")
 
     def test_collect_windows_structure(self):
         """测试 Windows 磁盘采集结构（mock PowerShell 返回）"""
