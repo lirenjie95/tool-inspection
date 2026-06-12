@@ -202,6 +202,15 @@ class TestHealthHandler(unittest.TestCase):
                         self.assertIn("cpu", body)
                         self.assertIn("memory", body)
 
+    def test_ping_returns_ok(self):
+        """测试 /ping 返回存活状态"""
+        import urllib.request
+        req = urllib.request.Request(f"http://127.0.0.1:{self.port}/ping")
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            self.assertEqual(resp.status, 200)
+            body = json.loads(resp.read().decode())
+            self.assertEqual(body["status"], "ok")
+
     def test_not_found(self):
         """测试未知路径返回 404"""
         import urllib.request
@@ -211,7 +220,7 @@ class TestHealthHandler(unittest.TestCase):
             urllib.request.urlopen(req, timeout=5)
         self.assertEqual(cm.exception.code, 404)
         body = json.loads(cm.exception.read().decode())
-        self.assertEqual(body["status"], "not_found")
+        self.assertEqual(body["status"], "error")
 
 
 class TestGetHealthData(unittest.TestCase):
@@ -230,9 +239,17 @@ class TestGetHealthData(unittest.TestCase):
                     self.assertIn("memory", data)
                     self.assertEqual(data["status"], "running")
 
-    def test_collect_disk_exception(self):
-        """测试 collect_disk 抛出异常时返回 500"""
+    def test_collect_disk_exception_isolated(self):
+        """测试 collect_disk 抛出异常时被 _safe_collect 隔离，不导致整体失败"""
         with patch("agent.collect_disk", side_effect=RuntimeError("disk error")):
+            data = get_health_data()
+            self.assertEqual(data["status"], "running")
+            self.assertIn("error", data["disks"])
+            self.assertIn("disk error", data["disks"]["error"])
+
+    def test_get_health_data_exception_returns_500(self):
+        """测试 get_health_data 整体异常时返回 500"""
+        with patch("agent.get_health_data", side_effect=RuntimeError("unexpected")):
             from http.server import HTTPServer
             import threading
             import socket
@@ -254,7 +271,7 @@ class TestGetHealthData(unittest.TestCase):
                 self.assertEqual(cm.exception.code, 500)
                 body = json.loads(cm.exception.read().decode())
                 self.assertEqual(body["status"], "error")
-                self.assertIn("disk error", body["message"])
+                self.assertIn("unexpected", body["message"])
             finally:
                 server.shutdown()
                 server.server_close()
