@@ -15,7 +15,9 @@ server/
 ├── services/             # 巡检服务扩展目录
 │   ├── __init__.py
 │   ├── disk.py           # 磁盘采集（已实现）
-│   └── iis.py            # IIS 采集（扩展示例）
+│   ├── cpu.py            # CPU 采集（已实现）
+│   ├── memory.py         # 内存采集（已实现）
+│   └── iis.py            # IIS 采集（扩展示例，需手动启用）
 ├── requirements.txt      # 零第三方依赖
 └── README.md             # 本文件
 ```
@@ -110,7 +112,7 @@ bash scripts/build_linux.sh
 curl http://localhost:5000/health
 ```
 
-应返回 JSON 格式的磁盘数据：
+应返回 JSON 格式的健康数据：
 ```json
 {
   "status": "running",
@@ -118,7 +120,9 @@ curl http://localhost:5000/health
   "disks": [
     {"DeviceID": "/", "FreeSpaceGB": 45, "SizeGB": 100},
     {"DeviceID": "/data", "FreeSpaceGB": 380, "SizeGB": 500}
-  ]
+  ],
+  "cpu": {"usage_percent": 12.5},
+  "memory": {"total_mb": 8192, "free_mb": 4096, "used_percent": 50.0}
 }
 ```
 
@@ -130,7 +134,7 @@ curl http://localhost:5000/health
 Invoke-RestMethod -Uri "http://localhost:5000/health"
 ```
 
-应返回 JSON 格式的磁盘数据，例如：
+应返回 JSON 格式的健康数据，例如：
 ```json
 {
   "status": "running",
@@ -138,7 +142,9 @@ Invoke-RestMethod -Uri "http://localhost:5000/health"
   "disks": [
     {"DeviceID": "C:", "FreeSpaceGB": 45, "SizeGB": 100},
     {"DeviceID": "D:", "FreeSpaceGB": 120, "SizeGB": 500}
-  ]
+  ],
+  "cpu": {"usage_percent": 25.0},
+  "memory": {"total_mb": 16384, "free_mb": 8192, "used_percent": 50.0}
 }
 ```
 
@@ -229,10 +235,12 @@ Start-Process python -ArgumentList "agent.py","--port","5000" -WindowStyle Hidde
 | status | string | 服务状态，通常为 "running" |
 | os | string | 操作系统类型 "Windows" / "Linux" |
 | disks | list | 磁盘列表，含 DeviceID, FreeSpaceGB, SizeGB |
+| cpu | dict | CPU 使用率，含 usage_percent |
+| memory | dict | 内存使用情况，含 total_mb, free_mb, used_percent |
 
 ## 扩展服务
 
-如需新增巡检项（如 IIS、SQL Server、CPU、内存、事件日志等），请按以下步骤：
+如需新增巡检项（如 IIS、SQL Server、事件日志等；CPU、内存、磁盘已内置），请按以下步骤：
 
 1. **新建服务文件**
 
@@ -252,11 +260,10 @@ Start-Process python -ArgumentList "agent.py","--port","5000" -WindowStyle Hidde
 
    在 `get_health_data()` 中加入：
    ```python
-   try:
-       data["sqlserver"] = collect_sqlserver()
-   except Exception as e:
-       data["sqlserver"] = {"error": str(e)}
+   data["sqlserver"] = _safe_collect("sqlserver", collect_sqlserver)
    ```
+
+   > `_safe_collect()` 会隔离单个采集服务的异常，避免某个服务失败导致整体健康接口不可用。
 
 3. **客户端展示**
 
@@ -266,6 +273,4 @@ Start-Process python -ArgumentList "agent.py","--port","5000" -WindowStyle Hidde
 
 Agent 已完整支持 Linux。`services/disk.py` 会自动检测操作系统：
 - **Windows**：通过 PowerShell 获取**所有本地磁盘**信息（自动包含 C:、D:、E: 等）
-- **Linux**：通过 `df -BG` 获取 `/` 和 `/data` 挂载点信息
-
-如需在 Linux 上检查其他挂载点，可修改 `services/disk.py` 中的 `mounts` 列表。
+- **Linux**：通过 `df -BG` 自动采集**所有真实挂载点**（如 `/`、`/data`、`/home` 等），并过滤 `tmpfs`、`devtmpfs`、`overlay` 等伪文件系统。

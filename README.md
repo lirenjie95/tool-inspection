@@ -21,6 +21,7 @@
 - 无需开放 SSH/WinRM，只需一个 HTTP 端口
 - 服务器本地采集，数据准确
 - **完整支持 Windows / Linux**，同一份代码跨平台运行
+- **内置 CPU / 内存 / 磁盘采集**，开箱即用
 - 新增服务只需在 `server/services/` 下新建文件
 
 ## 项目结构
@@ -34,8 +35,11 @@
 ├── server/                    # 服务器 Agent（每台被巡检服务器部署）
 │   ├── agent.py              # HTTP 服务入口（纯标准库）
 │   ├── services/             # 巡检服务扩展目录
+│   │   ├── __init__.py
 │   │   ├── disk.py           # 磁盘采集（已实现）
-│   │   └── iis.py            # IIS 采集（扩展示例）
+│   │   ├── cpu.py            # CPU 采集（已实现）
+│   │   ├── memory.py         # 内存采集（已实现）
+│   │   └── iis.py            # IIS 采集（扩展示例，需手动启用）
 │   ├── requirements.txt      # 零依赖
 │   └── README.md             # Agent 部署说明
 ├── scripts/                   # 打包脚本
@@ -179,7 +183,7 @@ python main.py --config config_prod.py
 只需在 `client/config.py` 的 `SERVERS` 列表中添加 IP 和端口，
 并在对应服务器上启动 `server/agent.py` 即可。
 
-### 新增巡检服务（如 IIS、SQL Server、CPU、内存）
+### 新增巡检服务（如 IIS、SQL Server）
 
 **服务端扩展：**
 
@@ -198,18 +202,23 @@ python main.py --config config_prod.py
        data = {
            "status": "running",
            "os": platform.system(),
-           "disks": collect_disk(),
-           "cpu": collect_cpu(),
-           "memory": collect_memory(),
+           "disks": _safe_collect("disk", collect_disk),
+           "cpu": _safe_collect("cpu", collect_cpu),
+           "memory": _safe_collect("memory", collect_memory),
        }
-       data["sqlserver"] = collect_sqlserver()
+       data["sqlserver"] = _safe_collect("sqlserver", collect_sqlserver)
        return data
    ```
+
+   > `_safe_collect()` 会隔离单个采集服务的异常，避免新增服务失败影响整体 `/health` 接口。
 
 **客户端扩展：**
 
 在 `client/main.py` 的 `inspect_server()` 或 `run_inspection()` 中解析服务端返回的新字段并展示。
 例如，在 `inspect_server()` 的 `if data.get("_http_ok")` 分支中加入新字段的判断和输出。
+
+> **注意：** CPU、内存、磁盘已作为内置服务实现，分别位于 `server/services/cpu.py`、
+> `server/services/memory.py`、`server/services/disk.py`，无需额外扩展即可使用。
 
 ### Linux 服务器支持
 
