@@ -47,6 +47,18 @@ def format_disk_line(disks: list) -> str:
     return " ".join(items)
 
 
+def format_metrics(data: dict) -> str:
+    """格式化 CPU 和内存指标"""
+    items = []
+    cpu = data.get("cpu", {})
+    memory = data.get("memory", {})
+    if cpu.get("usage_percent") is not None:
+        items.append(f"CPU: {cpu['usage_percent']}%")
+    if memory.get("used_percent") is not None:
+        items.append(f"内存: {memory['used_percent']}%")
+    return ", ".join(items) if items else ""
+
+
 def check_web(url_config: dict) -> dict:
     """检查网页可用性（跟随重定向）"""
     try:
@@ -97,6 +109,9 @@ def inspect_server(srv: dict, data: dict) -> tuple:
         disk_line = format_disk_line(disks)
         lines.append(f"{name} ({srv['ip']}) {disk_line}".strip())
         lines.append(f"  -> 状态: 运行正常")
+        metrics = format_metrics(data)
+        if metrics:
+            lines.append(f"  -> {metrics}")
         min_free = min((d["FreeSpaceGB"] for d in disks), default=0)
         if min_free < DISK_THRESHOLD_GB:
             lines.append(f"  -> [告警] 磁盘低于阈值 ({DISK_THRESHOLD_GB}GB)")
