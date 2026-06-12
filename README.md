@@ -120,6 +120,12 @@ New-NetFirewallRule -DisplayName "InspectionAgent" -Direction Inbound -Protocol 
 ```bash
 cd client
 python main.py
+
+# 保存文本报告
+python main.py --output report.txt
+
+# 保存 JSON 报告（方便二次处理）
+python main.py --output report.json
 ```
 
 ### 输出示例
@@ -130,12 +136,12 @@ python main.py
 ============================================================
 
 【应用服务器巡检】
-192.168.1.10 C盘剩余：45 GB D盘剩余：120 GB
+应用服务器-01 (192.168.1.10) C盘剩余：45 GB D盘剩余：120 GB
   -> 状态: 运行正常
   -> 磁盘检查: 通过
 
 【数据库服务器巡检】
-192.168.1.20 C盘剩余：28 GB D盘剩余：200 GB
+数据库服务器-01 (192.168.1.20) C盘剩余：28 GB D盘剩余：200 GB
   -> 状态: 运行正常
   -> [告警] 磁盘低于阈值 (30GB)
 
@@ -147,7 +153,7 @@ python main.py
 巡检结果汇总
 ============================================================
 共发现 1 项异常，请处理：
-   - 数据库服务器 192.168.1.20: 磁盘空间不足
+   - 数据库服务器-01 (192.168.1.20): 磁盘空间不足
 ============================================================
 ```
 
@@ -185,7 +191,8 @@ python main.py
 
 **客户端扩展：**
 
-在 `client/main.py` 中解析服务端返回的新字段并展示。
+在 `client/main.py` 的 `inspect_server()` 或 `run_inspection()` 中解析服务端返回的新字段并展示。
+例如，在 `inspect_server()` 的 `if data.get("_http_ok")` 分支中加入新字段的判断和输出。
 
 ### Linux 服务器支持
 
