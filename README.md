@@ -131,6 +131,9 @@ python main.py --output report.txt
 
 # 保存 JSON 报告（方便二次处理）
 python main.py --output report.json
+
+# 使用自定义配置文件（适合多环境：测试/生产）
+python main.py --config config_prod.py
 ```
 
 ### 输出示例

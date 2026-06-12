@@ -8,18 +8,33 @@
     python main.py
     python main.py --output report.txt
     python main.py --output report.json
+    python main.py --config config_prod.py
 
 依赖:
     pip install requests
 """
 
 import argparse
+import importlib.util
 import json
+import os
 import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import requests
 from config import SERVERS, WEBS, DISK_THRESHOLD_GB, ROLE_DISK_THRESHOLDS_GB
+
+
+def load_config(path: str = "config.py"):
+    """动态加载配置文件，默认为当前目录下的 config.py"""
+    abs_path = os.path.abspath(path)
+    if not os.path.isfile(abs_path):
+        raise FileNotFoundError(f"配置文件不存在: {abs_path}")
+
+    spec = importlib.util.spec_from_file_location("inspection_config", abs_path)
+    config = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(config)
+    return config
 
 
 def check_server_agent(server: dict) -> dict:
@@ -95,15 +110,25 @@ def check_all_servers(servers: list) -> list:
     return results
 
 
-def inspect_server(srv: dict, data: dict) -> tuple:
+def inspect_server(
+    srv: dict,
+    data: dict,
+    disk_threshold_gb: int = None,
+    role_disk_thresholds_gb: dict = None,
+) -> tuple:
     """
     检查单台服务器，返回 (lines, warnings)。
     lines 为输出文本行列表，warnings 为异常项列表。
     """
+    if disk_threshold_gb is None:
+        disk_threshold_gb = DISK_THRESHOLD_GB
+    if role_disk_thresholds_gb is None:
+        role_disk_thresholds_gb = ROLE_DISK_THRESHOLDS_GB
+
     lines = []
     warnings = []
     name = srv.get("name", srv["ip"])
-    threshold = ROLE_DISK_THRESHOLDS_GB.get(srv["role"], DISK_THRESHOLD_GB)
+    threshold = role_disk_thresholds_gb.get(srv["role"], disk_threshold_gb)
 
     if data.get("_http_ok") and data.get("status") == "running":
         disks = data.get("disks", [])
@@ -126,11 +151,25 @@ def inspect_server(srv: dict, data: dict) -> tuple:
     return lines, warnings
 
 
-def run_inspection() -> tuple:
+def run_inspection(
+    servers: list = None,
+    webs: list = None,
+    disk_threshold_gb: int = None,
+    role_disk_thresholds_gb: dict = None,
+) -> tuple:
     """
     执行完整巡检，返回 (output_text, structured_data)。
     output_text 为供人阅读的多行文本，structured_data 为 JSON 可序列化的字典。
     """
+    if servers is None:
+        servers = SERVERS
+    if webs is None:
+        webs = WEBS
+    if disk_threshold_gb is None:
+        disk_threshold_gb = DISK_THRESHOLD_GB
+    if role_disk_thresholds_gb is None:
+        role_disk_thresholds_gb = ROLE_DISK_THRESHOLDS_GB
+
     lines = []
     warnings = []
     structured = {
@@ -144,7 +183,7 @@ def run_inspection() -> tuple:
     lines.append("=" * 60)
 
     # ---------- 服务器 ----------
-    server_results = check_all_servers(SERVERS)
+    server_results = check_all_servers(servers)
 
     # 按角色分组
     by_role: dict = {}
@@ -160,7 +199,9 @@ def run_inspection() -> tuple:
         lines.append(f"\n【{role_display}】")
 
         for srv, data in servers_in_role:
-            srv_lines, srv_warnings = inspect_server(srv, data)
+            srv_lines, srv_warnings = inspect_server(
+                srv, data, disk_threshold_gb, role_disk_thresholds_gb
+            )
             lines.extend(srv_lines)
             warnings.extend(srv_warnings)
             structured["servers"][srv["ip"]] = {
@@ -172,7 +213,7 @@ def run_inspection() -> tuple:
 
     # ---------- 网页 ----------
     lines.append("\n【系统网页巡检】")
-    for web in WEBS:
+    for web in webs:
         r = check_web(web)
         lines.append(f"{web['name']} ({web['url']})")
         lines.append(f"  -> 状态: {r['status']} (HTTP {r['code'] or '-' })")
@@ -199,8 +240,15 @@ def run_inspection() -> tuple:
     return "\n".join(lines), structured
 
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser(description="服务器巡检客户端")
+    parser.add_argument(
+        "--config",
+        "-c",
+        type=str,
+        default="config.py",
+        help="指定配置文件路径 (默认: config.py)",
+    )
     parser.add_argument(
         "--output",
         "-o",
@@ -208,9 +256,15 @@ def main():
         default=None,
         help="输出巡检报告到文件（.json 结尾则输出 JSON，否则输出文本）",
     )
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
-    output_text, structured = run_inspection()
+    config = load_config(args.config)
+    output_text, structured = run_inspection(
+        servers=config.SERVERS,
+        webs=config.WEBS,
+        disk_threshold_gb=config.DISK_THRESHOLD_GB,
+        role_disk_thresholds_gb=getattr(config, "ROLE_DISK_THRESHOLDS_GB", {}),
+    )
     print(output_text)
 
     if args.output:
