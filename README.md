@@ -113,6 +113,11 @@ New-NetFirewallRule -DisplayName "InspectionAgent" -Direction Inbound -Protocol 
    WEBS = [
        {"name": "系统登录页", "url": "http://192.168.1.100/login"},
    ]
+
+   # 按角色配置磁盘告警阈值（未配置的角色使用 DISK_THRESHOLD_GB）
+   ROLE_DISK_THRESHOLDS_GB = {
+       "db": 50,   # 数据库服务器阈值更高
+   }
    ```
 
 ### 第三步：运行巡检
@@ -200,7 +205,7 @@ python main.py --output report.json
 
 ### Linux 服务器支持
 
-同一份 `server/agent.py` 可直接运行在 Linux 上，自动通过 `df -BG` 采集 `/` 和 `/data` 磁盘信息。
+同一份 `server/agent.py` 可直接运行在 Linux 上，自动通过 `df -BG` 采集所有真实挂载点（如 `/`、`/data`、`/home` 等），并自动过滤 `tmpfs`、`devtmpfs` 等伪文件系统。
 
 **部署方式：**
 
