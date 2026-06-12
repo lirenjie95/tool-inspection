@@ -13,6 +13,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "client"))
 from main import (
     check_server_agent,
     format_disk_line,
+    format_metrics,
     check_web,
     inspect_server,
     run_inspection,
@@ -68,6 +69,25 @@ class TestFormatDiskLine(unittest.TestCase):
     def test_empty_disks(self):
         """测试空磁盘列表"""
         result = format_disk_line([])
+        self.assertEqual(result, "")
+
+
+class TestFormatMetrics(unittest.TestCase):
+    """测试 format_metrics 函数"""
+
+    def test_with_cpu_and_memory(self):
+        """测试同时有 CPU 和内存数据"""
+        data = {
+            "cpu": {"usage_percent": 45.5},
+            "memory": {"used_percent": 60.0},
+        }
+        result = format_metrics(data)
+        self.assertIn("CPU: 45.5%", result)
+        self.assertIn("内存: 60.0%", result)
+
+    def test_without_metrics(self):
+        """测试没有指标数据"""
+        result = format_metrics({})
         self.assertEqual(result, "")
 
 

@@ -25,6 +25,8 @@ import json
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
 from services.disk import collect as collect_disk
+from services.cpu import collect as collect_cpu
+from services.memory import collect as collect_memory
 
 # 如需启用 IIS 检查，取消下一行注释
 # from services.iis import collect as collect_iis
@@ -36,6 +38,8 @@ def get_health_data():
         "status": "running",
         "os": platform.system(),
         "disks": collect_disk(),
+        "cpu": collect_cpu(),
+        "memory": collect_memory(),
     }
 
     # 扩展点：新增服务在此加入返回数据

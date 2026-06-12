@@ -11,9 +11,9 @@
 │  client/main.py │    GET /health        │ server/agent.py │
 └─────────────────┘                       └─────────────────┘
        │                                          │
-       │ 汇总输出                                  │ 本地 PowerShell/df
+       │ 汇总输出                                  │ 本地 PowerShell/df/free
        ▼                                          ▼
-   巡检报告                                    磁盘数据
+   巡检报告                                CPU / 内存 / 磁盘数据
 ```
 
 **优势：**
@@ -138,11 +138,13 @@ python main.py --output report.json
 【应用服务器巡检】
 应用服务器-01 (192.168.1.10) C盘剩余：45 GB D盘剩余：120 GB
   -> 状态: 运行正常
+  -> CPU: 35%, 内存: 62%
   -> 磁盘检查: 通过
 
 【数据库服务器巡检】
 数据库服务器-01 (192.168.1.20) C盘剩余：28 GB D盘剩余：200 GB
   -> 状态: 运行正常
+  -> CPU: 45%, 内存: 78%
   -> [告警] 磁盘低于阈值 (30GB)
 
 【系统网页巡检】
@@ -184,6 +186,8 @@ python main.py --output report.json
            "status": "running",
            "os": platform.system(),
            "disks": collect_disk(),
+           "cpu": collect_cpu(),
+           "memory": collect_memory(),
        }
        data["sqlserver"] = collect_sqlserver()
        return data

@@ -12,6 +12,8 @@ from unittest.mock import patch, MagicMock
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "server"))
 
 from services.disk import collect as collect_disk
+from services.cpu import collect as collect_cpu
+from services.memory import collect as collect_memory
 from services.iis import collect as collect_iis
 from agent import HealthHandler, get_health_data, run_server
 
@@ -72,6 +74,62 @@ class TestDiskService(unittest.TestCase):
                     collect_disk()
 
 
+class TestCPUService(unittest.TestCase):
+    """测试 CPU 采集服务"""
+
+    def test_collect_linux_returns_dict(self):
+        """测试 Linux CPU 采集返回字典"""
+        with patch("platform.system", return_value="Linux"):
+            with patch("time.sleep"):
+                with patch("builtins.open") as mock_open:
+                    # 模拟两次 /proc/stat 读取
+                    mock_open.return_value.__enter__.side_effect = [
+                        MagicMock(readline=MagicMock(return_value="cpu  100 0 0 100 0 0 0 0 0 0")),
+                        MagicMock(readline=MagicMock(return_value="cpu  200 0 0 150 0 0 0 0 0 0")),
+                    ]
+                    result = collect_cpu()
+                    self.assertIsInstance(result, dict)
+                    self.assertIn("usage_percent", result)
+
+    def test_collect_windows_returns_dict(self):
+        """测试 Windows CPU 采集返回字典"""
+        mock_json = json.dumps([20, 30])
+        with patch("platform.system", return_value="Windows"):
+            with patch("subprocess.run") as mock_run:
+                mock_run.return_value = MagicMock(returncode=0, stdout=mock_json, stderr="")
+                result = collect_cpu()
+                self.assertIsInstance(result, dict)
+                self.assertIn("usage_percent", result)
+                self.assertEqual(result["usage_percent"], 25)
+
+
+class TestMemoryService(unittest.TestCase):
+    """测试内存采集服务"""
+
+    def test_collect_linux_returns_dict(self):
+        """测试 Linux 内存采集返回字典"""
+        with patch("platform.system", return_value="Linux"):
+            with patch("subprocess.check_output", return_value="              total        used        free      shared  buff/cache   available\nMem:          8192        4096        2048         256        2048        3584"):
+                result = collect_memory()
+                self.assertIsInstance(result, dict)
+                self.assertIn("total_mb", result)
+                self.assertIn("free_mb", result)
+                self.assertIn("used_percent", result)
+                self.assertEqual(result["total_mb"], 8192)
+
+    def test_collect_windows_returns_dict(self):
+        """测试 Windows 内存采集返回字典"""
+        mock_json = json.dumps({"TotalVisibleMemorySize": 8388608, "FreePhysicalMemory": 4194304})
+        with patch("platform.system", return_value="Windows"):
+            with patch("subprocess.run") as mock_run:
+                mock_run.return_value = MagicMock(returncode=0, stdout=mock_json, stderr="")
+                result = collect_memory()
+                self.assertIsInstance(result, dict)
+                self.assertIn("total_mb", result)
+                self.assertIn("free_mb", result)
+                self.assertIn("used_percent", result)
+
+
 class TestIISService(unittest.TestCase):
     """测试 IIS 采集服务"""
 
@@ -111,13 +169,17 @@ class TestHealthHandler(unittest.TestCase):
         """测试 /health 返回 JSON 数据"""
         import urllib.request
         with patch("agent.collect_disk", return_value=[{"DeviceID": "/", "FreeSpaceGB": 10, "SizeGB": 100}]):
-            req = urllib.request.Request(f"http://127.0.0.1:{self.port}/health")
-            with urllib.request.urlopen(req, timeout=5) as resp:
-                self.assertEqual(resp.status, 200)
-                body = json.loads(resp.read().decode())
-                self.assertEqual(body["status"], "running")
-                self.assertIn("os", body)
-                self.assertIn("disks", body)
+            with patch("agent.collect_cpu", return_value={"usage_percent": 10}):
+                with patch("agent.collect_memory", return_value={"total_mb": 8192, "free_mb": 4096, "used_percent": 50}):
+                    req = urllib.request.Request(f"http://127.0.0.1:{self.port}/health")
+                    with urllib.request.urlopen(req, timeout=5) as resp:
+                        self.assertEqual(resp.status, 200)
+                        body = json.loads(resp.read().decode())
+                        self.assertEqual(body["status"], "running")
+                        self.assertIn("os", body)
+                        self.assertIn("disks", body)
+                        self.assertIn("cpu", body)
+                        self.assertIn("memory", body)
 
     def test_not_found(self):
         """测试未知路径返回 404"""
@@ -137,11 +199,15 @@ class TestGetHealthData(unittest.TestCase):
     def test_returns_expected_keys(self):
         """测试返回数据包含预期字段"""
         with patch("agent.collect_disk", return_value=[]):
-            data = get_health_data()
-            self.assertIn("status", data)
-            self.assertIn("os", data)
-            self.assertIn("disks", data)
-            self.assertEqual(data["status"], "running")
+            with patch("agent.collect_cpu", return_value={"usage_percent": 10}):
+                with patch("agent.collect_memory", return_value={"total_mb": 8192, "free_mb": 4096, "used_percent": 50}):
+                    data = get_health_data()
+                    self.assertIn("status", data)
+                    self.assertIn("os", data)
+                    self.assertIn("disks", data)
+                    self.assertIn("cpu", data)
+                    self.assertIn("memory", data)
+                    self.assertEqual(data["status"], "running")
 
     def test_collect_disk_exception(self):
         """测试 collect_disk 抛出异常时返回 500"""
@@ -197,8 +263,10 @@ class TestRunServer(unittest.TestCase):
         import urllib.request
         req = urllib.request.Request(f"http://127.0.0.1:{port}/health")
         with patch("agent.collect_disk", return_value=[]):
-            with urllib.request.urlopen(req, timeout=5) as resp:
-                self.assertEqual(resp.status, 200)
+            with patch("agent.collect_cpu", return_value={"usage_percent": 0}):
+                with patch("agent.collect_memory", return_value={"total_mb": 0, "free_mb": 0, "used_percent": 0}):
+                    with urllib.request.urlopen(req, timeout=5) as resp:
+                        self.assertEqual(resp.status, 200)
         server.shutdown()
         server.server_close()
 
