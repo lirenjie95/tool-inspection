@@ -234,7 +234,7 @@ Start-Process python -ArgumentList "agent.py","--port","5000" -WindowStyle Hidde
 |------|------|------|
 | status | string | 服务状态，通常为 "running" |
 | os | string | 操作系统类型 "Windows" / "Linux" |
-| disks | list | 磁盘列表，含 DeviceID, FreeSpaceGB, SizeGB |
+| disks | list | 磁盘列表，含 DeviceID, FreeSpaceGB, SizeGB；客户端会汇总所有磁盘的 FreeSpaceGB 进行总空间阈值判断 |
 | cpu | dict | CPU 使用率，含 usage_percent |
 | memory | dict | 内存使用情况，含 total_mb, free_mb, used_percent |
 

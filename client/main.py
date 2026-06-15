@@ -162,12 +162,12 @@ def inspect_server(
         metrics = format_metrics(data)
         if metrics:
             lines.append(f"  -> {metrics}")
-        min_free = min((d["FreeSpaceGB"] for d in disks), default=0)
-        if min_free < threshold:
-            lines.append(f"  -> [告警] 磁盘低于阈值 ({threshold}GB)")
-            warnings.append(f"{name} ({srv['ip']}): 磁盘空间不足")
+        total_free = sum(d["FreeSpaceGB"] for d in disks)
+        if total_free < threshold:
+            lines.append(f"  -> [告警] 总磁盘空间低于阈值 ({threshold}GB)")
+            warnings.append(f"{name} ({srv['ip']}): 总磁盘空间不足")
         else:
-            lines.append(f"  -> 磁盘检查: 通过")
+            lines.append(f"  -> 总磁盘空间检查: 通过")
     else:
         lines.append(f"{name} ({srv['ip']}) 状态: {data.get('error', 'Agent 异常')}")
         warnings.append(f"{name} ({srv['ip']}): 不可达")

@@ -205,7 +205,7 @@ class TestInspectServer(unittest.TestCase):
         }
         lines, warnings = inspect_server(srv, data, disk_threshold_gb=30)
         self.assertIn("app-01 (192.168.1.10)", lines[0])
-        self.assertTrue(any("磁盘检查: 通过" in line for line in lines))
+        self.assertTrue(any("总磁盘空间检查: 通过" in line for line in lines))
         self.assertEqual(len(warnings), 0)
 
     def test_low_disk(self):
@@ -217,9 +217,9 @@ class TestInspectServer(unittest.TestCase):
             "disks": [{"DeviceID": "D:", "FreeSpaceGB": 10, "SizeGB": 100}],
         }
         lines, warnings = inspect_server(srv, data, disk_threshold_gb=30)
-        self.assertTrue(any("[告警] 磁盘低于阈值" in line for line in lines))
+        self.assertTrue(any("[告警] 总磁盘空间低于阈值" in line for line in lines))
         self.assertEqual(len(warnings), 1)
-        self.assertIn("磁盘空间不足", warnings[0])
+        self.assertIn("总磁盘空间不足", warnings[0])
 
     def test_role_threshold(self):
         """测试角色使用更高的阈值"""
@@ -235,8 +235,39 @@ class TestInspectServer(unittest.TestCase):
             disk_threshold_gb=30,
             role_disk_thresholds_gb={"db": 50},
         )
-        self.assertTrue(any("[告警] 磁盘低于阈值 (50GB)" in line for line in lines))
+        self.assertTrue(any("[告警] 总磁盘空间低于阈值 (50GB)" in line for line in lines))
         self.assertEqual(len(warnings), 1)
+
+    def test_total_disk_above_threshold_single_disk_below(self):
+        """测试按总磁盘空间判断：单个盘低于阈值但合计高于阈值时应通过"""
+        srv = {"ip": "192.168.1.10", "port": 5000, "name": "app-01", "role": "app"}
+        data = {
+            "_http_ok": True,
+            "status": "running",
+            "disks": [
+                {"DeviceID": "C:", "FreeSpaceGB": 20, "SizeGB": 100},
+                {"DeviceID": "D:", "FreeSpaceGB": 20, "SizeGB": 100},
+            ],
+        }
+        lines, warnings = inspect_server(srv, data, disk_threshold_gb=30)
+        self.assertTrue(any("总磁盘空间检查: 通过" in line for line in lines))
+        self.assertEqual(len(warnings), 0)
+
+    def test_total_disk_below_threshold(self):
+        """测试按总磁盘空间判断：合计低于阈值时应告警"""
+        srv = {"ip": "192.168.1.10", "port": 5000, "name": "app-01", "role": "app"}
+        data = {
+            "_http_ok": True,
+            "status": "running",
+            "disks": [
+                {"DeviceID": "C:", "FreeSpaceGB": 10, "SizeGB": 100},
+                {"DeviceID": "D:", "FreeSpaceGB": 15, "SizeGB": 100},
+            ],
+        }
+        lines, warnings = inspect_server(srv, data, disk_threshold_gb=30)
+        self.assertTrue(any("[告警] 总磁盘空间低于阈值 (30GB)" in line for line in lines))
+        self.assertEqual(len(warnings), 1)
+        self.assertIn("总磁盘空间不足", warnings[0])
 
     def test_unreachable(self):
         """测试不可达服务器"""
@@ -253,7 +284,7 @@ class TestInspectServer(unittest.TestCase):
         data = {"_http_ok": True, "status": "running", "disks": []}
         lines, warnings = inspect_server(srv, data, disk_threshold_gb=30)
         self.assertTrue(any("运行正常" in line for line in lines))
-        self.assertTrue(any("[告警] 磁盘低于阈值" in line for line in lines))
+        self.assertTrue(any("[告警] 总磁盘空间低于阈值" in line for line in lines))
         self.assertEqual(len(warnings), 1)
 
     def test_without_name(self):
@@ -313,7 +344,7 @@ class TestRunInspection(unittest.TestCase):
         self.assertIn("服务器巡检开始", output_text)
         self.assertIn("app-01 (192.168.1.10)", output_text)
         self.assertIn("db-01 (192.168.1.20)", output_text)
-        self.assertIn("磁盘检查: 通过", output_text)
+        self.assertIn("总磁盘空间检查: 通过", output_text)
         self.assertIn("所有巡检项均正常", output_text)
         self.assertEqual(structured["summary"]["total_warnings"], 0)
 
@@ -353,8 +384,8 @@ class TestRunInspection(unittest.TestCase):
         }
 
         output_text, structured = run_inspection(**cfg)
-        self.assertIn("[告警] 磁盘低于阈值", output_text)
-        self.assertIn("磁盘空间不足", output_text)
+        self.assertIn("[告警] 总磁盘空间低于阈值", output_text)
+        self.assertIn("总磁盘空间不足", output_text)
         self.assertIn("共发现 1 项异常", output_text)
         self.assertEqual(structured["summary"]["total_warnings"], 1)
 
@@ -375,8 +406,8 @@ class TestRunInspection(unittest.TestCase):
         }
 
         output_text, structured = run_inspection(**cfg)
-        self.assertIn("[告警] 磁盘低于阈值 (50GB)", output_text)
-        self.assertIn("磁盘空间不足", output_text)
+        self.assertIn("[告警] 总磁盘空间低于阈值 (50GB)", output_text)
+        self.assertIn("总磁盘空间不足", output_text)
         self.assertIn("共发现 1 项异常", output_text)
         self.assertEqual(structured["summary"]["total_warnings"], 1)
 
@@ -397,7 +428,7 @@ class TestRunInspection(unittest.TestCase):
 
         output_text, structured = run_inspection(**cfg)
         self.assertIn("运行正常", output_text)
-        self.assertIn("[告警] 磁盘低于阈值", output_text)
+        self.assertIn("[告警] 总磁盘空间低于阈值", output_text)
         self.assertEqual(structured["summary"]["total_warnings"], 1)
 
     @patch("main.check_web")
@@ -476,7 +507,7 @@ class TestMain(unittest.TestCase):
                 main()
         output = captured.getvalue()
         self.assertIn("服务器巡检开始", output)
-        self.assertIn("磁盘检查: 通过", output)
+        self.assertIn("总磁盘空间检查: 通过", output)
         self.assertIn("所有巡检项均正常", output)
 
     @patch("main.check_server_agent")
@@ -524,8 +555,8 @@ class TestMain(unittest.TestCase):
             with patch("main.load_config", return_value=mock_config):
                 main()
         output = captured.getvalue()
-        self.assertIn("[告警] 磁盘低于阈值", output)
-        self.assertIn("磁盘空间不足", output)
+        self.assertIn("[告警] 总磁盘空间低于阈值", output)
+        self.assertIn("总磁盘空间不足", output)
         self.assertIn("共发现 1 项异常", output)
 
     @patch("main.check_server_agent")
@@ -550,7 +581,7 @@ class TestMain(unittest.TestCase):
                 main()
         output = captured.getvalue()
         self.assertIn("运行正常", output)
-        self.assertIn("[告警] 磁盘低于阈值", output)
+        self.assertIn("[告警] 总磁盘空间低于阈值", output)
 
     @patch("main.check_web")
     def test_web_unreachable(self, mock_check_web):
