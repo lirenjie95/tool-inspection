@@ -22,17 +22,25 @@ pip install pyinstaller
 
 | 目标系统 | 建议 Python 版本 | PyInstaller 版本 | 说明 |
 |---------|----------------|-----------------|------|
-| Windows Server 2008 (非 R2) | 3.7.x | 4.x | 最高只支持 3.7 |
-| Windows Server 2008 R2 | 3.8.x | 5.x | 官方最后支持的版本 |
-| Windows Server 2012+ | 3.9+ | 5.x+ | 推荐 |
+| Windows Server 2008 (非 R2) | 3.7.x | 4.x | 最高只支持 3.7，需 `--target ws2008` |
+| Windows Server 2008 R2 | 3.8.x | 5.x | 默认目标，`--target ws2008r2` |
+| Windows Server 2012+ | 3.9+ | 5.x+ | 需显式指定 `--target modern` |
 
-> 如果目标服务器是 Windows Server 2008，请确保打包用的 Python 版本不超过 3.8，
-> 否则可执行文件无法在目标机上运行。
+> 打包脚本默认目标为 **Windows Server 2008 R2**，会自动校验 Python 版本。
+> 如果当前 Python 为 3.9+，脚本会报错并提示换用 Python 3.8.x 或 `--target modern`。
 
 ### 执行打包
 
+默认打包（目标 Windows Server 2008 R2，要求 Python 3.8.x）：
+
 ```bash
 python scripts/build_windows.py
+```
+
+如需面向 Windows Server 2012+ / Win8.1+ 打包，可显式指定 modern 目标：
+
+```bash
+python scripts/build_windows.py --target modern
 ```
 
 打包完成后，输出位于 `server/dist/inspection-agent/`，包含：
@@ -130,8 +138,10 @@ PyInstaller 打包的 Linux 可执行文件依赖构建时的 glibc 版本，
 **Q: 打包后的程序无法运行，提示缺少 DLL/so？**
 A: `--onedir` 模式已包含所有依赖，请确保复制的是**整个文件夹**而不是单个 exe 文件。
 
-**Q: Windows Server 2008 上提示不支持？**
+**Q: Windows Server 2008 上提示不支持 / 缺少 api-ms-win-core-path-l1-1-0.dll？**
 A: 请检查打包时使用的 Python 版本。WS2008 非 R2 最高支持 Python 3.7，WS2008 R2 最高支持 3.8。
+   打包脚本默认以 WS2008 R2 为目标，若当前 Python 为 3.9+ 会直接报错并提示切换版本。
+   也可显式指定目标：`--target ws2008r2`（默认）、`--target ws2008`、`--target modern`。
 
 **Q: 能否打包成单文件（--onefile）？**
 A: 可以，但 `--onedir` 模式启动更快、兼容性更好，尤其适合老系统。如需单文件，

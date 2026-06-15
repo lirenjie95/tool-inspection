@@ -83,6 +83,8 @@
 
 **方式 B：打包成可执行程序（服务器无 Python 环境，推荐）**
 
+本项目默认面向 **Windows Server 2008 R2 Enterprise** 打包，要求打包机使用 **Python 3.8.x**。
+
 1. 在开发机上打包：
    ```bash
    pip install pyinstaller
@@ -91,8 +93,9 @@
 2. 将 `server/dist/inspection-agent/` **整个文件夹**复制到目标服务器
 3. 运行 `start.bat`（前台）或 `start_hidden.vbs`（后台静默）
 
-> Windows Server 2008 兼容性：打包时请使用 Python 3.7/3.8，
-> 更高版本不支持 WS2008。详见 `scripts/README.md`。
+> 如果当前 Python 版本高于 3.8.x，脚本会报错并提示原因。
+> 若目标服务器为 Windows Server 2012+ / Win8.1+，可使用 `python scripts/build_windows.py --target modern`。
+> 详见 `scripts/README.md`。
 
 **防火墙放行（两种方式都需要）：**
 

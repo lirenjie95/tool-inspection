@@ -18,6 +18,6 @@
   ],
   "DISK_THRESHOLD_GB": 30,
   "ROLE_DISK_THRESHOLDS_GB": {
-    "db": 50
+    "db": 30
   }
 }
