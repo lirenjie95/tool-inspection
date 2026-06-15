@@ -127,11 +127,21 @@ jobs:
       - name: Install PyInstaller
         run: pip install pyinstaller
 
+      - name: Cache Python 3.7 legacy runtime
+        uses: actions/cache@v4
+        with:
+          path: .py37-legacy-cache
+          key: ${{ runner.os }}-py37-legacy-${{ hashFiles('scripts/build_windows.py') }}
+          restore-keys: |
+            ${{ runner.os }}-py37-legacy-
+
       - name: Build Windows executable
         env:
           PYTHONIOENCODING: utf-8
         run: |
-          python scripts/build_windows.py
+          # 使用 --no-patch-required 模式，确保生成的 exe 在未安装 KB3063858/KB2533623 补丁的
+          # Windows Server 2008 R2 / Win7 上也能直接运行
+          python scripts/build_windows.py --no-patch-required
           $dist = "server/dist/inspection-agent"
           $winDist = "server/dist/inspection-agent-windows"
           New-Item -ItemType Directory -Force -Path $winDist

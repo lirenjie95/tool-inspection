@@ -95,6 +95,11 @@
 
 > 如果当前 Python 版本高于 3.8.x，脚本会报错并提示原因。
 > 若目标服务器为 Windows Server 2012+ / Win8.1+，可使用 `python scripts/build_windows.py --target modern`。
+> **若目标服务器无法安装系统补丁（如 KB3063858），但必须是 Win7/2008 R2，请使用：**
+> ```bash
+> python scripts/build_windows.py --no-patch-required
+> ```
+> 该模式会自动下载 Python 3.7 嵌入式运行时打包，生成的 exe 可在未打补丁的老系统上直接运行。
 > 详见 `scripts/README.md`。
 
 **防火墙放行（两种方式都需要）：**
@@ -300,6 +305,7 @@ bash scripts/build_linux.sh
 | Agent 启动报错 | 确认 Python 版本 >= 3.7；确认当前目录下有 `services/` 文件夹 |
 | 磁盘数据为空 | 确认 PowerShell 可正常执行；确认存在本地磁盘 |
 | 网页检测失败 | 确认 URL 正确；确认本地网络可访问目标网页 |
+| 启动报 `_socket: 参数错误` | 老系统（Win7/2008 R2）缺少 KB3063858 补丁；如无法安装补丁，请用 `--no-patch-required` 模式重新打包 |
 
 ## 安全建议
 

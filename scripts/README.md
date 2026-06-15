@@ -43,16 +43,44 @@ python scripts/build_windows.py
 python scripts/build_windows.py --target modern
 ```
 
+### 复制即用模式（老系统无需安装补丁）
+
+如果你的目标服务器是 **Windows Server 2008 R2 / Windows 7**，且**无法安装系统补丁**，请使用 `--no-patch-required` 模式：
+
+```bash
+python scripts/build_windows.py --no-patch-required
+```
+
+该模式会自动完成以下操作：
+1. 下载 Python 3.7.9 嵌入式运行时（约 7 MB）
+2. 下载 PyInstaller 5.13.2 及其依赖
+3. 使用 Python 3.7 + PyInstaller 5.x 打包
+
+**为什么这样做可以避免补丁问题？**
+
+Python 3.8+ 在加载 C 扩展（如 `_socket.pyd`）时使用了 `LoadLibraryExW` 的 `LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS` 标志，这需要目标系统安装 [KB3063858](https://support.microsoft.com/kb/3063858)（或旧版 KB2533623）补丁。缺少补丁时会出现：
+
+```
+ImportError: DLL load failed while importing _socket: 参数错误。
+```
+
+Python 3.7 不使用该标志，因此生成的 exe 可以在未打补丁的老系统上直接运行。
+
+> **注意**：首次执行会从网络下载 Python 3.7 运行时和依赖包，耗时取决于网络；后续会复用本地缓存 `.py37-legacy-cache/`，不再重复下载。
+
 打包完成后，输出位于 `server/dist/inspection-agent/`，包含：
 - `inspection-agent.exe` — 主程序
 - `start.bat` — 前台运行脚本
 - `start_hidden.vbs` — 后台静默运行脚本（无黑窗口）
+- `check_prereqs.ps1` — 部署前系统兼容性检查脚本
 - 各种依赖 DLL
 
 ### 部署
 
 将 `server/dist/inspection-agent/` **整个文件夹**复制到目标 Windows 服务器，
 然后运行 `start.bat` 或 `start_hidden.vbs`。
+
+部署前建议在目标服务器运行一次 `check_prereqs.ps1`，快速检查补丁状态。
 
 ---
 
@@ -138,10 +166,19 @@ PyInstaller 打包的 Linux 可执行文件依赖构建时的 glibc 版本，
 **Q: 打包后的程序无法运行，提示缺少 DLL/so？**
 A: `--onedir` 模式已包含所有依赖，请确保复制的是**整个文件夹**而不是单个 exe 文件。
 
+**Q: 运行时报 `ImportError: DLL load failed while importing _socket: 参数错误`？**
+A: 这是 Windows Server 2008 R2 / Win7 缺少 [KB3063858](https://support.microsoft.com/kb/3063858) 补丁的典型表现。
+   如果允许，在目标服务器安装该补丁后重启即可。
+   如果**无法安装补丁**，请使用 `--no-patch-required` 模式重新打包：
+   ```bash
+   python scripts/build_windows.py --no-patch-required
+   ```
+
 **Q: Windows Server 2008 上提示不支持 / 缺少 api-ms-win-core-path-l1-1-0.dll？**
 A: 请检查打包时使用的 Python 版本。WS2008 非 R2 最高支持 Python 3.7，WS2008 R2 最高支持 3.8。
    打包脚本默认以 WS2008 R2 为目标，若当前 Python 为 3.9+ 会直接报错并提示切换版本。
    也可显式指定目标：`--target ws2008r2`（默认）、`--target ws2008`、`--target modern`。
+   如无法安装补丁且必须部署到老系统，请使用 `--no-patch-required`。
 
 **Q: 能否打包成单文件（--onefile）？**
 A: 可以，但 `--onedir` 模式启动更快、兼容性更好，尤其适合老系统。如需单文件，
