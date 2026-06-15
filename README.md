@@ -134,14 +134,14 @@ New-NetFirewallRule -DisplayName "InspectionAgent" -Direction Inbound -Protocol 
      ],
      "DISK_THRESHOLD_GB": 30,
      "ROLE_DISK_THRESHOLDS_GB": {
-       "db": 50
+       "db": 30
      }
    }
    ```
 
    > 说明：`DISK_THRESHOLD_GB` 按单台服务器的**总剩余磁盘空间**判断。例如上例中
-   > 默认阈值 30GB 表示该服务器所有磁盘剩余空间之和需 ≥30GB；数据库角色则要求
-   > 总剩余空间 ≥50GB。
+   > 默认阈值 30GB 表示该服务器所有磁盘剩余空间之和需 ≥30GB；数据库角色同样要求
+   > 总剩余空间 ≥30GB。如需为数据库角色设置更高阈值，可调整 `ROLE_DISK_THRESHOLDS_GB.db`。
 
 ### 第三步：运行巡检
 
@@ -156,12 +156,15 @@ python main.py --output report.txt
 python main.py --output report.json
 
 # 使用自定义配置文件（适合多环境：测试/生产）
+# 支持 .json 与 .py 两种格式
 python main.py --config config_prod.json
+python main.py --config config_prod.py
 ```
 
 ### 输出示例
 
 > 以下示例使用默认磁盘阈值 30GB。若配置了 `ROLE_DISK_THRESHOLDS_GB`，会按对应角色的阈值判断。
+> 输出会按 `role` 字段对服务器分组展示（如 `app`、`db`），未匹配到预定义角色名时显示为 `{role} 服务器巡检`。
 
 ```
 ============================================================
@@ -252,8 +255,12 @@ python scripts/build_client_windows.py
 
 **客户端扩展：**
 
-在 `client/main.py` 的 `inspect_server()` 或 `run_inspection()` 中解析服务端返回的新字段并展示。
-例如，在 `inspect_server()` 的 `if data.get("_http_ok")` 分支中加入新字段的判断和输出。
+在 `client/main.py` 中解析并展示服务端返回的新字段。通常需要同时修改两处：
+
+1. **文本输出**：在 `inspect_server()` 的 `if data.get("_http_ok")` 分支中，
+   使用 `lines.append(...)` 加入新字段的格式化输出。
+2. **结构化数据**：在 `run_inspection()` 中，将新字段写入 `structured["servers"][srv["ip"]]["data"]`，
+   这样 `--output report.json` 生成的 JSON 报告也会包含该字段。
 
 > **注意：** CPU、内存、磁盘已作为内置服务实现，分别位于 `server/services/cpu.py`、
 > `server/services/memory.py`、`server/services/disk.py`，无需额外扩展即可使用。
@@ -266,7 +273,8 @@ python scripts/build_client_windows.py
 
 ```bash
 # 1. 复制到目标服务器
-scp -r server/ user@192.168.1.30:/opt/inspection-agent
+ssh user@192.168.1.30 "mkdir -p /opt/inspection-agent"
+scp -r server/* user@192.168.1.30:/opt/inspection-agent/
 
 # 2. 前台运行
 python3 /opt/inspection-agent/agent.py --port 5000
@@ -296,6 +304,29 @@ bash scripts/build_linux.sh
 
 打包后会生成 `inspection-agent` ELF 可执行文件和 systemd service 模板，
 和 Windows exe 一样无需目标机安装 Python。详见 `scripts/README.md`。
+
+## 测试
+
+项目包含 `tests/test_client.py` 和 `tests/test_server.py`，覆盖客户端配置加载、
+服务器巡检判断、Agent 接口以及各采集服务的主要分支。
+
+> 提示：以下命令使用 `python`，在某些系统（如 macOS）上可能需要替换为 `python3`。
+
+```bash
+# 安装测试依赖
+python -m pip install pytest coverage
+python -m pip install -r client/requirements.txt
+
+# 运行全部测试
+python -m pytest tests/ -v
+
+# 查看覆盖率（与 CI 保持一致）
+python -m coverage run --branch -m pytest tests/ -v
+python -m coverage report --include="server/*,client/*" -m
+```
+
+> 提示：`tests/test_server.py` 中的 HTTP Handler 测试会启动真实 HTTP 服务，
+> 使用临时端口，无需手动启动 Agent。
 
 ## 故障排查
 

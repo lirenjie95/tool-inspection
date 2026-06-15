@@ -59,11 +59,12 @@ server/
 
 1. 将本文件夹复制到目标服务器（通过 SCP、SFTP 或 rsync）：
    ```bash
-   scp -r server/ user@192.168.1.30:/opt/
+   ssh user@192.168.1.30 "mkdir -p /opt/inspection-agent"
+   scp -r server/* user@192.168.1.30:/opt/inspection-agent/
    ```
 2. 运行 Agent：
    ```bash
-   cd /opt/server
+   cd /opt/inspection-agent
    python3 agent.py --port 5000
    ```
 
@@ -106,13 +107,20 @@ bash scripts/build_linux.sh
 
 ### 启动验证
 
+Agent 默认监听 `0.0.0.0:5000`（可通过 `--port` 修改端口）。
 无论 Windows 还是 Linux，启动后在服务器本地测试：
 
 ```bash
 curl http://localhost:5000/health
 ```
 
-应返回 JSON 格式的健康数据：
+或在 Windows PowerShell 中：
+
+```powershell
+Invoke-RestMethod -Uri "http://localhost:5000/health"
+```
+
+应返回 JSON 格式的健康数据，例如：
 ```json
 {
   "status": "running",
@@ -126,27 +134,7 @@ curl http://localhost:5000/health
 }
 ```
 
-### 验证 Agent
-
-在服务器本地浏览器或 PowerShell 中访问：
-
-```powershell
-Invoke-RestMethod -Uri "http://localhost:5000/health"
-```
-
-应返回 JSON 格式的健康数据，例如：
-```json
-{
-  "status": "running",
-  "os": "Windows",
-  "disks": [
-    {"DeviceID": "C:", "FreeSpaceGB": 45, "SizeGB": 100},
-    {"DeviceID": "D:", "FreeSpaceGB": 120, "SizeGB": 500}
-  ],
-  "cpu": {"usage_percent": 25.0},
-  "memory": {"total_mb": 16384, "free_mb": 8192, "used_percent": 50.0}
-}
-```
+> 轻量级存活探测可使用 `GET /ping`，返回 `{"status": "ok"}`，不执行任何采集。
 
 ### 防火墙放通
 
@@ -209,8 +197,8 @@ bash scripts/build_linux.sh
 2. 以管理员执行：
    ```cmd
    nssm install InspectionAgent
-   # Path: C:\Python39\python.exe
-   # Startup directory: C:\server\
+   # Path: C:\Path\To\python.exe
+   # Startup directory: C:\Path\To\inspection-agent\
    # Arguments: agent.py --port 5000
    nssm start InspectionAgent
    ```
@@ -244,6 +232,13 @@ Start-Process python -ArgumentList "agent.py","--port","5000" -WindowStyle Hidde
 | cpu | dict | CPU 使用率，含 usage_percent |
 | memory | dict | 内存使用情况，含 total_mb, free_mb, used_percent |
 
+### GET /ping
+
+轻量级存活探测，不执行任何采集，返回：
+```json
+{"status": "ok"}
+```
+
 ## 扩展服务
 
 如需新增巡检项（如 IIS、SQL Server、事件日志等；CPU、内存、磁盘已内置），请按以下步骤：
@@ -269,7 +264,9 @@ Start-Process python -ArgumentList "agent.py","--port","5000" -WindowStyle Hidde
    data["sqlserver"] = _safe_collect("sqlserver", collect_sqlserver)
    ```
 
-   > `_safe_collect()` 会隔离单个采集服务的异常，避免某个服务失败导致整体健康接口不可用。
+   现有内置服务（disk / cpu / memory）也是通过 `_safe_collect` 调用的，新增服务建议保持同样写法。
+
+   > `_safe_collect()` 会隔离单个采集服务的异常，避免某个服务失败导致整体 `/health` 接口不可用。
 
 3. **客户端展示**
 
