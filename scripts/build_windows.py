@@ -5,21 +5,36 @@
 将 server/agent.py 及其 services/ 打包为独立可执行程序，
 用于在没有 Python 环境的 Windows 服务器上运行。
 
+默认目标平台：Windows Server 2008 R2 Enterprise
+因此默认要求打包环境为 Python 3.8.x，防止生成不兼容的 exe。
+
 环境要求:
-    - Python 3.7 或 3.8 (Windows Server 2008/2008R2 最高支持 3.8)
+    - Python 3.8.x（默认目标 Windows Server 2008 R2）
+    - Python 3.7.x（如需兼容 Windows Server 2008 非 R2，使用 --target ws2008）
+    - Python 3.9+（仅当目标为 Server 2012+/Win8.1+ 时使用 --target modern）
     - pip install pyinstaller
 
 用法:
     python scripts/build_windows.py
+    python scripts/build_windows.py --target modern
 
 输出:
     server/dist/inspection-agent/  (文件夹，包含 exe 和依赖)
 """
 
+import argparse
 import subprocess
 import sys
 import os
 import shutil
+
+
+# 目标系统与最高支持的 Python 版本
+TARGET_COMPATIBILITY = {
+    "ws2008": (3, 7),      # Windows Server 2008（非 R2）
+    "ws2008r2": (3, 8),    # Windows Server 2008 R2（默认目标）
+    "modern": None,        # Server 2012+ / Win8.1+，无限制
+}
 
 
 def check_pyinstaller():
@@ -31,7 +46,55 @@ def check_pyinstaller():
         return False
 
 
+def check_python_compatibility(target):
+    """检查当前 Python 版本是否满足目标系统的兼容性要求"""
+    major, minor = sys.version_info[:2]
+    max_version = TARGET_COMPATIBILITY.get(target)
+
+    if max_version is None:
+        # modern 目标不做强制限制，但友好提示老系统兼容性问题
+        if (major, minor) >= (3, 9):
+            print("\n[提示] 当前使用 Python {}.{} 打包".format(major, minor))
+            print("       Python 3.9+ 生成的 exe 不支持 Windows Server 2008/2008 R2 / Windows 7。")
+            print("       若目标服务器为老系统，请使用 Python 3.8.x 并去掉 --target modern。")
+        return
+
+    # 老系统目标：强制校验 Python 主/次版本
+    if (major, minor) > max_version:
+        print("\n[错误] 目标系统 '{}' 要求 Python <= {}.{}, 但当前为 Python {}.{}".format(
+            target, max_version[0], max_version[1], major, minor))
+        print("       请安装兼容的 Python 版本后重新打包：")
+        if target == "ws2008r2":
+            print("       Windows Server 2008 R2 请使用 Python 3.8.x")
+        elif target == "ws2008":
+            print("       Windows Server 2008（非 R2）请使用 Python 3.7.x")
+        print("       如目标为 Server 2012+ / Win8.1+，可改用 --target modern")
+        sys.exit(1)
+
+    print("\n[信息] 兼容性检查通过：Python {}.{} 可用于目标 '{}'".format(
+        major, minor, target))
+
+
+def parse_args():
+    """解析命令行参数"""
+    parser = argparse.ArgumentParser(
+        description="将 server/agent.py 打包为 Windows 可执行程序"
+    )
+    parser.add_argument(
+        "--target",
+        choices=list(TARGET_COMPATIBILITY.keys()),
+        default="ws2008r2",
+        help=(
+            "目标 Windows 版本（默认 ws2008r2）。"
+            "指定老系统时会强制检查 Python 版本，避免生成在目标机上无法运行的 exe。"
+        ),
+    )
+    return parser.parse_args()
+
+
 def main():
+    args = parse_args()
+
     # 切换到项目根目录
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     os.chdir(root)
@@ -39,12 +102,15 @@ def main():
 
     print("=" * 60)
     print("开始打包 Inspection Agent (Windows)")
+    print("目标平台: {}".format(args.target))
     print("=" * 60)
 
     if not check_pyinstaller():
         print("错误: 未安装 PyInstaller")
         print("请先执行: pip install pyinstaller")
         sys.exit(1)
+
+    check_python_compatibility(args.target)
 
     # 清理旧构建
     for name in ["build", "dist"]:
