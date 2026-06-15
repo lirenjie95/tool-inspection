@@ -2,15 +2,15 @@
 
 ## 概述
 
-打包脚本用于将 `server/agent.py` 及其依赖转换为**不依赖 Python 环境**的可执行程序，
-方便在没有安装 Python 的服务器上直接运行。
+打包脚本用于将 `server/agent.py` 和 `client/main.py` 及其依赖转换为**不依赖 Python 环境**的可执行程序，
+方便在没有安装 Python 的服务器或管理机上直接运行。
 
 > **CI/CD 自动构建**：本项目配置了 GitHub Actions，在推送 `v*` 标签时会自动构建
-> Windows 和 Linux 可执行文件并发布到 GitHub Release。自动构建的 Release 包中
-> **同样包含** `start.bat`、`start_hidden.vbs`、`start.sh` 和 `inspection-agent.service`
-> 等辅助脚本，可直接下载部署。
+> Windows、Linux 可执行文件以及 Windows 客户端程序，并发布到 GitHub Release。
+> 自动构建的 Release 包中**同样包含** `start.bat`、`start_hidden.vbs`、`start.sh`、
+> `inspection-agent.service` 等辅助脚本，可直接下载部署。
 
-## Windows 打包
+## 服务器 Windows 打包
 
 ### 环境准备
 
@@ -45,6 +45,36 @@ python scripts/build_windows.py
 
 将 `server/dist/inspection-agent/` **整个文件夹**复制到目标 Windows 服务器，
 然后运行 `start.bat` 或 `start_hidden.vbs`。
+
+---
+
+## 客户端 Windows 打包
+
+### 环境准备
+
+```bash
+pip install pyinstaller
+pip install -r client/requirements.txt
+```
+
+### 执行打包
+
+```bash
+python scripts/build_client_windows.py
+```
+
+打包完成后，输出位于 `client/dist/inspection-client/`，包含：
+- `inspection-client.exe` — 客户端主程序
+- `config.json` — 默认配置文件（可直接修改）
+- `start.bat` — 前台运行脚本
+- `start_json.bat` — 运行并输出 JSON 报告
+- `start_txt.bat` — 运行并输出文本报告
+- 各种依赖 DLL
+
+### 部署
+
+将 `client/dist/inspection-client/` **整个文件夹**复制到目标 Windows 管理机，
+编辑 `config.json` 填入服务器 Agent 地址后，双击 `start.bat` 即可运行。
 
 ---
 

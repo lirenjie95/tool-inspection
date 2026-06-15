@@ -159,9 +159,67 @@ jobs:
           name: windows-build
           path: server/dist/inspection-agent-windows.zip
 
+  build-client-windows:
+    name: Build Windows Client Executable
+    needs: test
+    runs-on: windows-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install pyinstaller
+          pip install -r client/requirements.txt
+
+      - name: Build Windows client executable
+        working-directory: ./client
+        run: |
+          python -m PyInstaller `
+            --name inspection-client `
+            --onedir `
+            --console `
+            main.py
+          $dist = "dist/inspection-client"
+          Copy-Item -Path "config.json" -Destination "$dist/config.json" -Force
+          @"
+          @echo off
+          cd /d "%~dp0"
+          inspection-client.exe
+          pause
+          "@ | Out-File -Encoding utf8 "$dist/start.bat"
+          @"
+          @echo off
+          cd /d "%~dp0"
+          inspection-client.exe --output report.json
+          pause
+          "@ | Out-File -Encoding utf8 "$dist/start_json.bat"
+          @"
+          @echo off
+          cd /d "%~dp0"
+          inspection-client.exe --output report.txt
+          pause
+          "@ | Out-File -Encoding utf8 "$dist/start_txt.bat"
+          $winDist = "dist/inspection-client-windows"
+          New-Item -ItemType Directory -Force -Path $winDist
+          Copy-Item -Path "$dist/*" -Destination $winDist -Recurse -Force
+          Compress-Archive -Path "$winDist/*" -DestinationPath "dist/inspection-client-windows.zip" -Force
+        shell: pwsh
+
+      - name: Upload Windows client artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-client-build
+          path: client/dist/inspection-client-windows.zip
+
   release:
     name: Create GitHub Release
-    needs: [build-linux, build-windows]
+    needs: [build-linux, build-windows, build-client-windows]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     permissions:
@@ -179,6 +237,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: windows-build
+          path: ./artifacts
+
+      - name: Download Windows client artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-client-build
           path: ./artifacts
 
       - name: Create Release

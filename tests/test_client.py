@@ -135,7 +135,7 @@ class TestLoadConfig(unittest.TestCase):
     def test_load_default_config(self):
         """测试加载默认配置文件"""
         config_path = os.path.join(
-            os.path.dirname(__file__), "..", "client", "config.py"
+            os.path.dirname(__file__), "..", "client", "config.json"
         )
         config = load_config(config_path)
         self.assertTrue(hasattr(config, "SERVERS"))
@@ -161,6 +161,33 @@ class TestLoadConfig(unittest.TestCase):
             self.assertEqual(config.SERVERS, [])
             self.assertEqual(config.WEBS, [])
             self.assertEqual(config.DISK_THRESHOLD_GB, 100)
+        finally:
+            os.unlink(path)
+
+    def test_load_json_config(self):
+        """测试加载 JSON 配置文件"""
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".json", delete=False, encoding="utf-8"
+        ) as f:
+            import json as _json
+            _json.dump(
+                {
+                    "SERVERS": [
+                        {"role": "app", "ip": "192.168.1.10", "port": 5000, "name": "app-01"}
+                    ],
+                    "WEBS": [{"name": "首页", "url": "http://example.com"}],
+                    "DISK_THRESHOLD_GB": 50,
+                    "ROLE_DISK_THRESHOLDS_GB": {"db": 80},
+                },
+                f,
+            )
+            path = f.name
+        try:
+            config = load_config(path)
+            self.assertEqual(len(config.SERVERS), 1)
+            self.assertEqual(config.SERVERS[0]["ip"], "192.168.1.10")
+            self.assertEqual(config.DISK_THRESHOLD_GB, 50)
+            self.assertEqual(config.ROLE_DISK_THRESHOLDS_GB["db"], 80)
         finally:
             os.unlink(path)
 
