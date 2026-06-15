@@ -22,19 +22,43 @@ import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import requests
-from config import SERVERS, WEBS, DISK_THRESHOLD_GB, ROLE_DISK_THRESHOLDS_GB
 
 
-def load_config(path: str = "config.py"):
-    """动态加载配置文件，默认为当前目录下的 config.py"""
+class _JsonConfig:
+    """将 JSON 配置包装为与 Python 模块配置相同的属性访问接口"""
+
+    def __init__(self, data: dict):
+        self._data = data
+
+    def __getattr__(self, name: str):
+        if name in self._data:
+            return self._data[name]
+        # 兼容未配置的角色阈值
+        if name == "ROLE_DISK_THRESHOLDS_GB":
+            return {}
+        raise AttributeError(f"配置缺少必需项: {name}")
+
+
+def load_config(path: str = "config.json"):
+    """动态加载配置文件，支持 .json 和 .py 格式，默认为当前目录下的 config.json"""
     abs_path = os.path.abspath(path)
     if not os.path.isfile(abs_path):
         raise FileNotFoundError(f"配置文件不存在: {abs_path}")
+
+    if abs_path.lower().endswith(".json"):
+        with open(abs_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return _JsonConfig(data)
 
     spec = importlib.util.spec_from_file_location("inspection_config", abs_path)
     config = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(config)
     return config
+
+
+def _load_default_config():
+    """加载默认配置文件（用于 run_inspection 无参调用时）"""
+    return load_config(os.path.join(os.path.dirname(__file__), "config.json"))
 
 
 def check_server_agent(server: dict) -> dict:
@@ -121,9 +145,9 @@ def inspect_server(
     lines 为输出文本行列表，warnings 为异常项列表。
     """
     if disk_threshold_gb is None:
-        disk_threshold_gb = DISK_THRESHOLD_GB
+        disk_threshold_gb = _load_default_config().DISK_THRESHOLD_GB
     if role_disk_thresholds_gb is None:
-        role_disk_thresholds_gb = ROLE_DISK_THRESHOLDS_GB
+        role_disk_thresholds_gb = {}
 
     lines = []
     warnings = []
@@ -162,13 +186,17 @@ def run_inspection(
     output_text 为供人阅读的多行文本，structured_data 为 JSON 可序列化的字典。
     """
     if servers is None:
-        servers = SERVERS
+        default_cfg = _load_default_config()
+        servers = default_cfg.SERVERS
     if webs is None:
-        webs = WEBS
+        default_cfg = default_cfg if "default_cfg" in locals() else _load_default_config()
+        webs = default_cfg.WEBS
     if disk_threshold_gb is None:
-        disk_threshold_gb = DISK_THRESHOLD_GB
+        default_cfg = default_cfg if "default_cfg" in locals() else _load_default_config()
+        disk_threshold_gb = default_cfg.DISK_THRESHOLD_GB
     if role_disk_thresholds_gb is None:
-        role_disk_thresholds_gb = ROLE_DISK_THRESHOLDS_GB
+        default_cfg = default_cfg if "default_cfg" in locals() else _load_default_config()
+        role_disk_thresholds_gb = getattr(default_cfg, "ROLE_DISK_THRESHOLDS_GB", {})
 
     lines = []
     warnings = []
@@ -246,8 +274,8 @@ def main(argv=None):
         "--config",
         "-c",
         type=str,
-        default="config.py",
-        help="指定配置文件路径 (默认: config.py)",
+        default="config.json",
+        help="指定配置文件路径，支持 .json 或 .py (默认: config.json)",
     )
     parser.add_argument(
         "--output",

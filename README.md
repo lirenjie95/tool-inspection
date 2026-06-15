@@ -30,7 +30,7 @@
 .
 ├── client/                    # 本地巡检端（只需在一台管理机上运行）
 │   ├── main.py               # 巡检主入口
-│   ├── config.py             # 服务器 Agent 地址配置
+│   ├── config.json           # 服务器 Agent 地址配置
 │   └── requirements.txt      # pip install -r requirements.txt
 ├── server/                    # 服务器 Agent（每台被巡检服务器部署）
 │   ├── agent.py              # HTTP 服务入口（纯标准库）
@@ -43,7 +43,8 @@
 │   ├── requirements.txt      # 零依赖
 │   └── README.md             # Agent 部署说明
 ├── scripts/                   # 打包脚本
-│   ├── build_windows.py      # Windows exe 打包
+│   ├── build_windows.py      # 服务器 Windows exe 打包
+│   ├── build_client_windows.py # 客户端 Windows exe 打包
 │   ├── build_linux.sh        # Linux ELF 打包
 │   └── README.md             # 打包说明
 ├── tests/                     # 单元测试
@@ -113,19 +114,20 @@ New-NetFirewallRule -DisplayName "InspectionAgent" -Direction Inbound -Protocol 
    pip install -r client/requirements.txt
    ```
 
-2. 编辑 `client/config.py`，填入各服务器的 Agent 地址：
-   ```python
-   SERVERS = [
+2. 编辑 `client/config.json`，填入各服务器的 Agent 地址：
+   ```json
+   {
+     "SERVERS": [
        {"role": "app", "ip": "192.168.1.10", "port": 5000, "name": "应用服务器-01"},
-       {"role": "db",  "ip": "192.168.1.20", "port": 5000, "name": "数据库服务器-01"},
-   ]
-   WEBS = [
-       {"name": "系统登录页", "url": "http://192.168.1.100/login"},
-   ]
-
-   # 按角色配置磁盘告警阈值（未配置的角色使用 DISK_THRESHOLD_GB）
-   ROLE_DISK_THRESHOLDS_GB = {
-       "db": 50,   # 数据库服务器阈值更高
+       {"role": "db",  "ip": "192.168.1.20", "port": 5000, "name": "数据库服务器-01"}
+     ],
+     "WEBS": [
+       {"name": "系统登录页", "url": "http://192.168.1.100/login"}
+     ],
+     "DISK_THRESHOLD_GB": 30,
+     "ROLE_DISK_THRESHOLDS_GB": {
+       "db": 50
+     }
    }
    ```
 
@@ -142,7 +144,7 @@ python main.py --output report.txt
 python main.py --output report.json
 
 # 使用自定义配置文件（适合多环境：测试/生产）
-python main.py --config config_prod.py
+python main.py --config config_prod.json
 ```
 
 ### 输出示例
@@ -176,11 +178,33 @@ python main.py --config config_prod.py
 ============================================================
 ```
 
+### 第四步：打包客户端为 Windows 可执行程序（可选）
+
+如果管理机没有 Python 环境，可将客户端打包为独立 exe：
+
+```bash
+pip install pyinstaller
+python scripts/build_client_windows.py
+```
+
+打包完成后，输出位于 `client/dist/inspection-client/`，包含：
+- `inspection-client.exe` — 客户端主程序
+- `config.json` — 默认配置文件（可直接修改）
+- `start.bat` — 前台运行脚本
+- `start_json.bat` — 运行并输出 JSON 报告
+- `start_txt.bat` — 运行并输出文本报告
+
+部署方式：将 `client/dist/inspection-client/` **整个文件夹**复制到目标 Windows 管理机，
+编辑 `config.json` 后双击 `start.bat` 即可运行。
+
+> CI/CD 已同步支持：推送 `v*` 标签时会自动构建 `inspection-client-windows.zip`
+> 并上传到 GitHub Release。
+
 ## 扩展指南
 
 ### 新增服务器
 
-只需在 `client/config.py` 的 `SERVERS` 列表中添加 IP 和端口，
+只需在 `client/config.json` 的 `SERVERS` 列表中添加 IP 和端口，
 并在对应服务器上启动 `server/agent.py` 即可。
 
 ### 新增巡检服务（如 IIS、SQL Server）
