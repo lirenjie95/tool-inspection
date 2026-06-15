@@ -178,6 +178,12 @@ start_hidden.vbs   # 后台静默运行（无黑窗口）
 
 > **Windows Server 2008 兼容性提示**：打包时请使用 Python 3.7/3.8，
 > 更高版本不支持 WS2008。详见 `scripts/README.md`。
+>
+> **复制即用（无需补丁）**：如果目标服务器无法安装 KB3063858/KB2533623 补丁，请使用：
+> ```bash
+> python scripts/build_windows.py --no-patch-required
+> ```
+> 该模式使用 Python 3.7 嵌入式运行时打包，生成的 exe 可在未打补丁的 Win7/2008 R2 上直接运行。
 
 ### Linux 打包（ELF）
 
