@@ -5,10 +5,13 @@
 打包脚本用于将 `server/agent.py` 和 `client/main.py` 及其依赖转换为**不依赖 Python 环境**的可执行程序，
 方便在没有安装 Python 的服务器或管理机上直接运行。
 
-> **CI/CD 自动构建**：本项目配置了 GitHub Actions，在推送 `v*` 标签时会自动构建
-> Windows、Linux 可执行文件以及 Windows 客户端程序，并发布到 GitHub Release。
-> 自动构建的 Release 包中**同样包含** `start.bat`、`start_hidden.vbs`、`start.sh`、
-> `inspection-agent.service` 等辅助脚本，可直接下载部署。
+> **CI/CD 自动构建**：本项目配置了 GitHub Actions，在推送 `v*` 标签时会自动构建并发布到 GitHub Release：
+> - `inspection-agent-linux.tar.gz`（Linux ELF + `start.sh` + `inspection-agent.service`）
+> - `inspection-agent-windows.zip`（Windows exe + `start.bat` + `start_hidden.vbs` + `check_prereqs.ps1`）
+> - `inspection-client-windows.zip`（Windows 客户端 exe + `config.json` + `start.bat` / `start_json.bat` / `start_txt.bat`）
+>
+> 其中 Windows Agent 在 CI 中默认使用 `--no-patch-required` 模式打包，
+> 因此 Release 包可在未安装 KB3063858/KB2533623 补丁的 Windows Server 2008 R2 / Win7 上直接运行。
 
 ## 服务器 Windows 打包
 
@@ -55,6 +58,7 @@ python scripts/build_windows.py --no-patch-required
 1. 下载 Python 3.7.9 嵌入式运行时（约 7 MB）
 2. 下载 PyInstaller 5.13.2 及其依赖
 3. 使用 Python 3.7 + PyInstaller 5.x 打包
+4. 首次执行会从网络下载，耗时取决于网络；后续复用本地缓存 `.py37-legacy-cache/`，不再重复下载
 
 **为什么这样做可以避免补丁问题？**
 
@@ -66,14 +70,15 @@ ImportError: DLL load failed while importing _socket: 参数错误。
 
 Python 3.7 不使用该标志，因此生成的 exe 可以在未打补丁的老系统上直接运行。
 
-> **注意**：首次执行会从网络下载 Python 3.7 运行时和依赖包，耗时取决于网络；后续会复用本地缓存 `.py37-legacy-cache/`，不再重复下载。
-
 打包完成后，输出位于 `server/dist/inspection-agent/`，包含：
 - `inspection-agent.exe` — 主程序
 - `start.bat` — 前台运行脚本
 - `start_hidden.vbs` — 后台静默运行脚本（无黑窗口）
 - `check_prereqs.ps1` — 部署前系统兼容性检查脚本
 - 各种依赖 DLL
+
+> 注意：本地默认打包目标为 `ws2008r2`（要求 Python 3.8.x），而 CI 中的 Release 包使用 `--no-patch-required`。
+> 如需本地也生成兼容未打补丁老系统的包，请显式加上 `--no-patch-required`。
 
 ### 部署
 
