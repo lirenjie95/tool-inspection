@@ -28,33 +28,33 @@
 
 ```
 .
-├── client/                     # 本地巡检端（只需在一台管理机上运行）
-│   ├── main.py                 # 巡检主入口
-│   ├── config.json             # 服务器 Agent 地址配置
-│   └── requirements.txt        # pip install -r requirements.txt
-├── server/                     # 服务器 Agent（每台被巡检服务器部署）
-│   ├── agent.py                # HTTP 服务入口（纯标准库）
-│   ├── services/               # 巡检服务扩展目录
+├── client/ # 本地巡检端（只需在一台管理机上运行）
+│   ├── main.py # 巡检主入口
+│   ├── config.json # 服务器 Agent 地址配置
+│   └── requirements.txt # pip install -r requirements.txt
+├── server/ # 服务器 Agent（每台被巡检服务器部署）
+│   ├── agent.py # HTTP 服务入口（纯标准库）
+│   ├── services/ # 巡检服务扩展目录
 │   │   ├── __init__.py
-│   │   ├── disk.py             # 磁盘采集（已实现）
-│   │   ├── cpu.py              # CPU 采集（已实现）
-│   │   ├── memory.py           # 内存采集（已实现）
-│   │   └── iis.py              # IIS 采集（扩展示例，需手动启用）
-│   ├── requirements.txt        # 零依赖
-│   └── README.md               # Agent 部署说明
-├── scripts/                    # 打包脚本
-│   ├── build_windows.py        # 服务器 Windows exe 打包
+│   │   ├── disk.py # 磁盘采集（已实现）
+│   │   ├── cpu.py # CPU 采集（已实现）
+│   │   ├── memory.py # 内存采集（已实现）
+│   │   └── iis.py # IIS 采集（扩展示例，需手动启用）
+│   ├── requirements.txt # 零依赖
+│   └── README.md # Agent 部署说明
+├── scripts/ # 打包脚本
+│   ├── build_windows.py # 服务器 Windows exe 打包
 │   ├── build_client_windows.py # 客户端 Windows exe 打包
-│   ├── build_linux.sh          # Linux ELF 打包
-│   └── README.md               # 打包说明
-├── tests/                      # 单元测试
+│   ├── build_linux.sh # Linux ELF 打包
+│   └── README.md # 打包说明
+├── tests/ # 单元测试
 │   ├── __init__.py
 │   ├── test_client.py
 │   └── test_server.py
 ├── .github/
 │   └── workflows/
-│       └── ci-cd.yml           # GitHub Actions CI/CD
-└── README.md                   # 本文件
+│       └── ci-cd.yml # GitHub Actions CI/CD
+└── README.md # 本文件
 ```
 
 ## 环境要求

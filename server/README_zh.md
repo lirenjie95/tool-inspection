@@ -11,15 +11,15 @@ Agent 在服务器本地运行一个轻量 HTTP 服务，通过本机 PowerShell
 
 ```
 server/
-├── agent.py              # HTTP 服务入口（无需修改）
-├── services/             # 巡检服务扩展目录
+├── agent.py # HTTP 服务入口（无需修改）
+├── services/ # 巡检服务扩展目录
 │   ├── __init__.py
-│   ├── disk.py           # 磁盘采集（已实现）
-│   ├── cpu.py            # CPU 采集（已实现）
-│   ├── memory.py         # 内存采集（已实现）
-│   └── iis.py            # IIS 采集（扩展示例，需手动启用）
-├── requirements.txt      # 零第三方依赖
-└── README.md             # 本文件
+│   ├── disk.py # 磁盘采集（已实现）
+│   ├── cpu.py # CPU 采集（已实现）
+│   ├── memory.py # 内存采集（已实现）
+│   └── iis.py # IIS 采集（扩展示例，需手动启用）
+├── requirements.txt # 零第三方依赖
+└── README.md # 本文件
 ```
 
 ## 部署要求

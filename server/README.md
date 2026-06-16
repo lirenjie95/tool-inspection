@@ -13,15 +13,15 @@ and responds to HTTP queries from the local inspection client.
 
 ```
 server/
-├── agent.py              # HTTP service entry point (no modification needed)
-├── services/             # Inspection service extension directory
+├── agent.py # HTTP service entry point (no modification needed)
+├── services/ # Inspection service extension directory
 │   ├── __init__.py
-│   ├── disk.py           # Disk collection (implemented)
-│   ├── cpu.py            # CPU collection (implemented)
-│   ├── memory.py         # Memory collection (implemented)
-│   └── iis.py            # IIS collection (extension example, enable manually)
-├── requirements.txt      # Zero third-party dependencies
-└── README.md             # This file
+│   ├── disk.py # Disk collection (implemented)
+│   ├── cpu.py # CPU collection (implemented)
+│   ├── memory.py # Memory collection (implemented)
+│   └── iis.py # IIS collection (extension example, enable manually)
+├── requirements.txt # Zero third-party dependencies
+└── README.md # This file
 ```
 
 ## Deployment Requirements
