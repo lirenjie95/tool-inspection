@@ -30,33 +30,33 @@ without requiring complex remote protocols such as SSH/WinRM/WMI.
 
 ```
 .
-├── client/ # Local inspection endpoint (run on one management machine)
-│   ├── main.py # Inspection entry point
-│   ├── config.json # Server Agent address configuration
-│   └── requirements.txt # pip install -r requirements.txt
-├── server/ # Server Agent (deploy on each inspected server)
-│   ├── agent.py # HTTP service entry point (pure standard library)
-│   ├── services/ # Inspection service extension directory
+├── client/                     # Local inspection endpoint (run on one management machine)
+│   ├── main.py                 # Inspection entry point
+│   ├── config.json             # Server Agent address configuration
+│   └── requirements.txt        # pip install -r requirements.txt
+├── server/                     # Server Agent (deploy on each inspected server)
+│   ├── agent.py                # HTTP service entry point (pure standard library)
+│   ├── services/               # Inspection service extension directory
 │   │   ├── __init__.py
-│   │   ├── disk.py # Disk collection (implemented)
-│   │   ├── cpu.py # CPU collection (implemented)
-│   │   ├── memory.py # Memory collection (implemented)
-│   │   └── iis.py # IIS collection (extension example, enable manually)
-│   ├── requirements.txt # Zero dependencies
-│   └── README.md # Agent deployment instructions
-├── scripts/ # Build scripts
-│   ├── build_windows.py # Server Windows exe packaging
+│   │   ├── disk.py             # Disk collection (implemented)
+│   │   ├── cpu.py              # CPU collection (implemented)
+│   │   ├── memory.py           # Memory collection (implemented)
+│   │   └── iis.py              # IIS collection (extension example, enable manually)
+│   ├── requirements.txt        # Zero dependencies
+│   └── README.md               # Agent deployment instructions
+├── scripts/                    # Build scripts
+│   ├── build_windows.py        # Server Windows exe packaging
 │   ├── build_client_windows.py # Client Windows exe packaging
-│   ├── build_linux.sh # Linux ELF packaging
-│   └── README.md # Packaging instructions
-├── tests/ # Unit tests
+│   ├── build_linux.sh          # Linux ELF packaging
+│   └── README.md               # Packaging instructions
+├── tests/                      # Unit tests
 │   ├── __init__.py
 │   ├── test_client.py
 │   └── test_server.py
 ├── .github/
 │   └── workflows/
-│       └── ci-cd.yml # GitHub Actions CI/CD
-└── README.md # This file
+│       └── ci-cd.yml           # GitHub Actions CI/CD
+└── README.md                   # This file
 ```
 
 ## Requirements
@@ -81,7 +81,7 @@ Choose one of the following methods depending on whether Python is available on 
    ```cmd
    cd server
    python agent.py --port 5000
-```
+   ```
 
 **Option B: Package as an executable (recommended for servers without Python)**
 
@@ -91,7 +91,7 @@ By default, this project targets **Windows Server 2008 R2 Enterprise** and requi
    ```bash
    pip install pyinstaller
    python scripts/build_windows.py
-```
+   ```
 2. Copy the entire `server/dist/inspection-agent/` folder to the target server.
 3. Run `start.bat` (foreground) or `start_hidden.vbs` (background, silent).
 
@@ -122,7 +122,7 @@ New-NetFirewallRule -DisplayName "InspectionAgent" -Direction Inbound -Protocol 
 1. Install dependencies:
    ```bash
    pip install -r client/requirements.txt
-```
+   ```
 
 2. Edit `client/config.json` and fill in the Agent addresses of each server:
    ```json
@@ -140,7 +140,7 @@ New-NetFirewallRule -DisplayName "InspectionAgent" -Direction Inbound -Protocol 
        "db": 30
      }
    }
-```
+   ```
 
    > Note: `LANGUAGE` defaults to `"zh"` (Chinese). Set it to `"en"` to output reports in English.
    > `DISK_THRESHOLD_GB` is evaluated against the **total free disk space** of a single server. In the example above,
@@ -240,7 +240,7 @@ and start `server/agent.py` on the corresponding server.
    def collect():
        # Implement collection logic
        return {"status": "ok", "databases": [...]}
-```
+   ```
 
 2. Import and register it in `server/agent.py`:
    ```python
@@ -256,7 +256,7 @@ and start `server/agent.py` on the corresponding server.
        }
        data["sqlserver"] = _safe_collect("sqlserver", collect_sqlserver)
        return data
-```
+   ```
 
    > `_safe_collect()` isolates exceptions from individual collection services, preventing a single service failure from affecting the entire `/health` endpoint.
 

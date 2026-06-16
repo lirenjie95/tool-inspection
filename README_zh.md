@@ -28,33 +28,33 @@
 
 ```
 .
-├── client/ # 本地巡检端（只需在一台管理机上运行）
-│   ├── main.py # 巡检主入口
-│   ├── config.json # 服务器 Agent 地址配置
-│   └── requirements.txt # pip install -r requirements.txt
-├── server/ # 服务器 Agent（每台被巡检服务器部署）
-│   ├── agent.py # HTTP 服务入口（纯标准库）
-│   ├── services/ # 巡检服务扩展目录
+├── client/                     # 本地巡检端（只需在一台管理机上运行）
+│   ├── main.py                 # 巡检主入口
+│   ├── config.json             # 服务器 Agent 地址配置
+│   └── requirements.txt        # pip install -r requirements.txt
+├── server/                     # 服务器 Agent（每台被巡检服务器部署）
+│   ├── agent.py                # HTTP 服务入口（纯标准库）
+│   ├── services/               # 巡检服务扩展目录
 │   │   ├── __init__.py
-│   │   ├── disk.py # 磁盘采集（已实现）
-│   │   ├── cpu.py # CPU 采集（已实现）
-│   │   ├── memory.py # 内存采集（已实现）
-│   │   └── iis.py # IIS 采集（扩展示例，需手动启用）
-│   ├── requirements.txt # 零依赖
-│   └── README.md # Agent 部署说明
-├── scripts/ # 打包脚本
-│   ├── build_windows.py # 服务器 Windows exe 打包
+│   │   ├── disk.py             # 磁盘采集（已实现）
+│   │   ├── cpu.py              # CPU 采集（已实现）
+│   │   ├── memory.py           # 内存采集（已实现）
+│   │   └── iis.py              # IIS 采集（扩展示例，需手动启用）
+│   ├── requirements.txt        # 零依赖
+│   └── README.md               # Agent 部署说明
+├── scripts/                    # 打包脚本
+│   ├── build_windows.py        # 服务器 Windows exe 打包
 │   ├── build_client_windows.py # 客户端 Windows exe 打包
-│   ├── build_linux.sh # Linux ELF 打包
-│   └── README.md # 打包说明
-├── tests/ # 单元测试
+│   ├── build_linux.sh          # Linux ELF 打包
+│   └── README.md               # 打包说明
+├── tests/                      # 单元测试
 │   ├── __init__.py
 │   ├── test_client.py
 │   └── test_server.py
 ├── .github/
 │   └── workflows/
-│       └── ci-cd.yml # GitHub Actions CI/CD
-└── README.md # 本文件
+│       └── ci-cd.yml           # GitHub Actions CI/CD
+└── README.md                   # 本文件
 ```
 
 ## 环境要求
@@ -79,7 +79,7 @@
    ```cmd
    cd server
    python agent.py --port 5000
-```
+   ```
 
 **方式 B：打包成可执行程序（服务器无 Python 环境，推荐）**
 
@@ -89,7 +89,7 @@
    ```bash
    pip install pyinstaller
    python scripts/build_windows.py
-```
+   ```
 2. 将 `server/dist/inspection-agent/` **整个文件夹**复制到目标服务器
 3. 运行 `start.bat`（前台）或 `start_hidden.vbs`（后台静默）
 
@@ -120,7 +120,7 @@ New-NetFirewallRule -DisplayName "InspectionAgent" -Direction Inbound -Protocol 
 1. 安装依赖：
    ```bash
    pip install -r client/requirements.txt
-```
+   ```
 
 2. 编辑 `client/config.json`，填入各服务器的 Agent 地址：
    ```json
@@ -138,7 +138,7 @@ New-NetFirewallRule -DisplayName "InspectionAgent" -Direction Inbound -Protocol 
        "db": 30
      }
    }
-```
+   ```
 
    > 说明：`LANGUAGE` 默认为 `"zh"`（中文），设置为 `"en"` 可输出英文巡检报告。
    > `DISK_THRESHOLD_GB` 按单台服务器的**总剩余磁盘空间**判断。例如上例中
@@ -238,7 +238,7 @@ python scripts/build_client_windows.py
    def collect():
        # 实现采集逻辑
        return {"status": "ok", "databases": [...]}
-```
+   ```
 
 2. 在 `server/agent.py` 中导入并注册：
    ```python
@@ -254,7 +254,7 @@ python scripts/build_client_windows.py
        }
        data["sqlserver"] = _safe_collect("sqlserver", collect_sqlserver)
        return data
-```
+   ```
 
    > `_safe_collect()` 会隔离单个采集服务的异常，避免新增服务失败影响整体 `/health` 接口。
 
