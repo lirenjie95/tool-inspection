@@ -5,7 +5,6 @@
 CPU usage information collection service.
 """
 
-import json
 import platform
 import subprocess
 
