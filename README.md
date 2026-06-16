@@ -127,6 +127,7 @@ New-NetFirewallRule -DisplayName "InspectionAgent" -Direction Inbound -Protocol 
 2. Edit `client/config.json` and fill in the Agent addresses of each server:
    ```json
    {
+     "LANGUAGE": "zh",
      "SERVERS": [
        {"role": "app", "ip": "192.168.1.10", "port": 5000, "name": "App Server 01"},
        {"role": "db",  "ip": "192.168.1.20", "port": 5000, "name": "DB Server 01"}
@@ -141,7 +142,8 @@ New-NetFirewallRule -DisplayName "InspectionAgent" -Direction Inbound -Protocol 
    }
    ```
 
-   > Note: `DISK_THRESHOLD_GB` is evaluated against the **total free disk space** of a single server. In the example above,
+   > Note: `LANGUAGE` defaults to `"zh"` (Chinese). Set it to `"en"` to output reports in English.
+   > `DISK_THRESHOLD_GB` is evaluated against the **total free disk space** of a single server. In the example above,
    > the default threshold of 30GB means the sum of free space across all disks on the server must be ≥30GB; the `db` role also requires
    > total free space ≥30GB. To set a higher threshold for the database role, adjust `ROLE_DISK_THRESHOLDS_GB.db`.
 
@@ -161,6 +163,9 @@ python main.py --output report.json
 # Supports both .json and .py formats
 python main.py --config config_prod.json
 python main.py --config config_prod.py
+
+# Output in English (overrides config LANGUAGE)
+python main.py --lang en
 ```
 
 ### Sample Output
@@ -329,6 +334,24 @@ python -m coverage report --include="server/*,client/*" -m
 
 > Tip: The HTTP Handler tests in `tests/test_server.py` start a real HTTP service on a temporary port;
 > no manual Agent startup is required.
+
+## Output Language
+
+All command-line tools in this project default to **Chinese** output and can be switched to **English**.
+
+- **Client inspection report**
+  - Set `"LANGUAGE": "en"` in `client/config.json`, or
+  - Use `python main.py --lang en`
+
+- **Agent startup logs**
+  - `python agent.py --port 5000 --lang en`
+
+- **Windows packaging scripts**
+  - `python scripts/build_windows.py --lang en`
+  - `python scripts/build_client_windows.py --lang en`
+
+- **Linux packaging script**
+  - `OUTPUT_LANG=en bash scripts/build_linux.sh`
 
 ## Troubleshooting
 

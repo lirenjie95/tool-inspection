@@ -103,6 +103,14 @@ bash scripts/build_linux.sh
 然后将 `server/dist/inspection-agent/` 复制到目标服务器运行。
 详见 `scripts/README.md`。
 
+### 输出语言
+
+Agent 启动/停止日志默认中文。如需输出英文：
+
+```bash
+python agent.py --port 5000 --lang en
+```
+
 ---
 
 ### 启动验证

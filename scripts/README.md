@@ -187,6 +187,14 @@ A: Check the Python version used for packaging. WS2008 non-R2 supports up to Pyt
    You can also explicitly specify the target: `--target ws2008r2` (default), `--target ws2008`, or `--target modern`.
    If the patch cannot be installed and you must deploy to a legacy system, use `--no-patch-required`.
 
+## Output Language
+
+All packaging scripts default to Chinese output and support English.
+
+- **Windows Agent**: `python scripts/build_windows.py --lang en`
+- **Windows Client**: `python scripts/build_client_windows.py --lang en`
+- **Linux Agent**: `OUTPUT_LANG=en bash scripts/build_linux.sh`
+
 **Q: Can it be packaged as a single file (--onefile)?**
 A: Yes, but `--onedir` mode starts faster and has better compatibility, especially for legacy systems. If you need a single file,
    change `--onedir` to `--onefile` in the script.

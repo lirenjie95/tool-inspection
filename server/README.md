@@ -105,6 +105,14 @@ bash scripts/build_linux.sh
 Then copy `server/dist/inspection-agent/` to the target server and run it.
 See `scripts/README.md` for details.
 
+### Output Language
+
+The Agent's startup/shutdown logs default to Chinese. To output them in English:
+
+```bash
+python agent.py --port 5000 --lang en
+```
+
 ---
 
 ### Startup Verification

@@ -2,7 +2,13 @@
 # -*- coding: utf-8 -*-
 """服务器端巡检服务扩展包
 
+Server-side inspection service extension package.
+
 如需新增巡检项（如 IIS、SQL Server、CPU、内存、事件日志等），
 请在此目录下新建 Python 文件并实现 collect() 函数，
 然后在 agent.py 中导入并加入 health 接口返回数据。
+
+To add new inspection items (e.g. IIS, SQL Server, CPU, memory, event logs),
+create a new Python file in this directory and implement a collect() function,
+then import it in agent.py and add its data to the health endpoint response.
 """
