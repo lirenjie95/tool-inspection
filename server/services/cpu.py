@@ -56,10 +56,12 @@ def _collect_windows(lang: str = DEFAULT_LANG):
     """Windows: 通过 PowerShell 获取 CPU 平均使用率。
 
     Windows: get average CPU usage via PowerShell.
+    兼容 PowerShell 2.0（不使用 ConvertTo-Json）
+    Compatible with PowerShell 2.0 (does not use ConvertTo-Json).
     """
     ps_cmd = (
-        "$cpus = Get-WmiObject Win32_Processor | Select-Object LoadPercentage; "
-        "$cpus | Select-Object -ExpandProperty LoadPercentage | ConvertTo-Json"
+        "Get-WmiObject Win32_Processor | "
+        "ForEach-Object { $_.LoadPercentage }"
     )
     result = subprocess.run(
         ["powershell", "-Command", ps_cmd],
@@ -69,15 +71,17 @@ def _collect_windows(lang: str = DEFAULT_LANG):
     if result.returncode != 0:
         raise RuntimeError(t("powershell_failed", lang, error=result.stderr))
 
-    data = json.loads(result.stdout)
-    if isinstance(data, int):
-        values = [data]
-    elif isinstance(data, float):
-        values = [data]
-    elif isinstance(data, list):
-        values = [v for v in data if isinstance(v, (int, float))]
-    else:
-        values = []
+    values = []
+    for line in result.stdout.strip().splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            value = float(line)
+            if value >= 0:
+                values.append(value)
+        except ValueError:
+            continue
 
     if not values:
         return {"usage_percent": 0}

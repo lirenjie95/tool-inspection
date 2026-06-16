@@ -53,6 +53,7 @@ TRANSLATIONS = {
         "report_save_failed": "[错误] 保存报告失败: {error}",
         "app_role": "应用服务器巡检",
         "db_role": "数据库服务器巡检",
+        "disk_collect_failed": "磁盘采集失败: {error}",
     },
     "en": {
         "server_inspection_start": "Server Inspection Started",
@@ -77,6 +78,7 @@ TRANSLATIONS = {
         "report_save_failed": "[ERROR] Failed to save report: {error}",
         "app_role": "App Server Inspection",
         "db_role": "DB Server Inspection",
+        "disk_collect_failed": "Disk collection failed: {error}",
     },
 }
 
@@ -149,11 +151,13 @@ def format_disk_line(disks: list, lang: str = DEFAULT_LANG) -> str:
     """
     items = []
     for d in disks:
+        if not isinstance(d, dict):
+            continue
         # Windows: "C:" -> "C盘" (zh) / "C:" (en) | Linux: "/" -> "/"
-        label = d["DeviceID"]
+        label = d.get("DeviceID", "")
         if lang == "zh":
             label = label.replace(":", "盘")
-        free = d["FreeSpaceGB"]
+        free = d.get("FreeSpaceGB", 0)
         if lang == "zh":
             items.append(f"{label}剩余：{free} GB")
         else:
@@ -235,18 +239,25 @@ def inspect_server(
 
     if data.get("_http_ok") and data.get("status") == "running":
         disks = data.get("disks", [])
-        disk_line = format_disk_line(disks, lang=lang)
-        lines.append(f"{name} ({srv['ip']}) {disk_line}".strip())
-        lines.append(f"  -> {t('web_status_prefix', lang)}: {t('status_normal', lang)}")
-        metrics = format_metrics(data, lang=lang)
-        if metrics:
-            lines.append(f"  -> {metrics}")
-        total_free = sum(d["FreeSpaceGB"] for d in disks)
-        if total_free < threshold:
-            lines.append(f"  -> {t('disk_warning', lang, threshold=threshold)}")
+        # 磁盘采集失败时返回的是 {"error": ..., "traceback": ...} 字典
+        # When disk collection fails, an {"error": ..., "traceback": ...} dict is returned
+        if not isinstance(disks, list):
+            error = disks.get("error", t("agent_error", lang)) if isinstance(disks, dict) else str(disks)
+            lines.append(f"{name} ({srv['ip']}) {t('web_status_prefix', lang)}: {t('disk_collect_failed', lang, error=error)}")
             warnings.append(t("disk_warning_detail", lang, name=name, ip=srv["ip"]))
         else:
-            lines.append(f"  -> {t('disk_check_passed', lang)}")
+            disk_line = format_disk_line(disks, lang=lang)
+            lines.append(f"{name} ({srv['ip']}) {disk_line}".strip())
+            lines.append(f"  -> {t('web_status_prefix', lang)}: {t('status_normal', lang)}")
+            metrics = format_metrics(data, lang=lang)
+            if metrics:
+                lines.append(f"  -> {metrics}")
+            total_free = sum(d.get("FreeSpaceGB", 0) for d in disks if isinstance(d, dict))
+            if total_free < threshold:
+                lines.append(f"  -> {t('disk_warning', lang, threshold=threshold)}")
+                warnings.append(t("disk_warning_detail", lang, name=name, ip=srv["ip"]))
+            else:
+                lines.append(f"  -> {t('disk_check_passed', lang)}")
     else:
         error = data.get("error", t("agent_error", lang))
         lines.append(f"{name} ({srv['ip']}) {t('web_status_prefix', lang)}: {error}")
