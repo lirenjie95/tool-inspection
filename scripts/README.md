@@ -1,153 +1,155 @@
-# 打包脚本说明
+# Packaging Scripts
 
-## 概述
+[中文文档](README_zh.md)
 
-打包脚本用于将 `server/agent.py` 和 `client/main.py` 及其依赖转换为**不依赖 Python 环境**的可执行程序，
-方便在没有安装 Python 的服务器或管理机上直接运行。
+## Overview
 
-> **CI/CD 自动构建**：本项目配置了 GitHub Actions，在推送 `v*` 标签时会自动构建并发布到 GitHub Release：
-> - `inspection-agent-linux.tar.gz`（Linux ELF + `start.sh` + `inspection-agent.service`）
-> - `inspection-agent-windows.zip`（Windows exe + `start.bat` + `start_hidden.vbs` + `check_prereqs.ps1`）
-> - `inspection-client-windows.zip`（Windows 客户端 exe + `config.json` + `start.bat` / `start_json.bat` / `start_txt.bat`）
+The packaging scripts convert `server/agent.py` and `client/main.py` along with their dependencies into **Python-free executables**,
+so they can run directly on servers or management machines without a Python installation.
+
+> **CI/CD Automated Builds**: This project is configured with GitHub Actions. When a `v*` tag is pushed, it automatically builds and publishes to a GitHub Release:
+> - `inspection-agent-linux.tar.gz` (Linux ELF + `start.sh` + `inspection-agent.service`)
+> - `inspection-agent-windows.zip` (Windows exe + `start.bat` + `start_hidden.vbs` + `check_prereqs.ps1`)
+> - `inspection-client-windows.zip` (Windows client exe + `config.json` + `start.bat` / `start_json.bat` / `start_txt.bat`)
 >
-> 其中 Windows Agent 在 CI 中默认使用 `--no-patch-required` 模式打包，
-> 因此 Release 包可在未安装 KB3063858/KB2533623 补丁的 Windows Server 2008 R2 / Win7 上直接运行。
+> The Windows Agent in CI is packaged using the `--no-patch-required` mode by default,
+> so Release packages can run directly on Windows Server 2008 R2 / Win7 systems without the KB3063858/KB2533623 patches.
 
-## 服务器 Windows 打包
+## Server Windows Packaging
 
-### 环境准备
+### Environment Setup
 
 ```bash
 pip install pyinstaller
 ```
 
-**兼容性提示：**
+**Compatibility Notes:**
 
-| 目标系统 | 建议 Python 版本 | PyInstaller 版本 | 说明 |
-|---------|----------------|-----------------|------|
-| Windows Server 2008 (非 R2) | 3.7.x | 4.x | 最高只支持 3.7，需 `--target ws2008` |
-| Windows Server 2008 R2 | 3.8.x | 5.x | 默认目标，`--target ws2008r2` |
-| Windows Server 2012+ | 3.9+ | 5.x+ | 需显式指定 `--target modern` |
+| Target System | Recommended Python | PyInstaller Version | Notes |
+|---------------|-------------------|---------------------|-------|
+| Windows Server 2008 (non-R2) | 3.7.x | 4.x | Maximum 3.7 support; requires `--target ws2008` |
+| Windows Server 2008 R2 | 3.8.x | 5.x | Default target; `--target ws2008r2` |
+| Windows Server 2012+ | 3.9+ | 5.x+ | Requires explicit `--target modern` |
 
-> 打包脚本默认目标为 **Windows Server 2008 R2**，会自动校验 Python 版本。
-> 如果当前 Python 为 3.9+，脚本会报错并提示换用 Python 3.8.x 或 `--target modern`。
+> The packaging script defaults to **Windows Server 2008 R2** and validates the Python version automatically.
+> If the current Python is 3.9+, the script will report an error and prompt you to switch to Python 3.8.x or use `--target modern`.
 
-### 执行打包
+### Running the Build
 
-默认打包（目标 Windows Server 2008 R2，要求 Python 3.8.x）：
+Default build (target Windows Server 2008 R2, requires Python 3.8.x):
 
 ```bash
 python scripts/build_windows.py
 ```
 
-如需面向 Windows Server 2012+ / Win8.1+ 打包，可显式指定 modern 目标：
+To target Windows Server 2012+ / Win8.1+, explicitly specify the modern target:
 
 ```bash
 python scripts/build_windows.py --target modern
 ```
 
-### 复制即用模式（老系统无需安装补丁）
+### Copy-and-Run Mode (No Patches Required on Legacy Systems)
 
-如果你的目标服务器是 **Windows Server 2008 R2 / Windows 7**，且**无法安装系统补丁**，请使用 `--no-patch-required` 模式：
+If your target server is **Windows Server 2008 R2 / Windows 7** and **cannot install system patches**, use the `--no-patch-required` mode:
 
 ```bash
 python scripts/build_windows.py --no-patch-required
 ```
 
-该模式会自动完成以下操作：
-1. 下载 Python 3.7.9 嵌入式运行时（约 7 MB）
-2. 下载 PyInstaller 5.13.2 及其依赖
-3. 使用 Python 3.7 + PyInstaller 5.x 打包
-4. 首次执行会从网络下载，耗时取决于网络；后续复用本地缓存 `.py37-legacy-cache/`，不再重复下载
+This mode automatically performs the following:
+1. Downloads the Python 3.7.9 embedded runtime (~7 MB)
+2. Downloads PyInstaller 5.13.2 and its dependencies
+3. Packages using Python 3.7 + PyInstaller 5.x
+4. On first run, files are downloaded from the network (time depends on network speed); subsequent runs reuse the local cache `.py37-legacy-cache/` without re-downloading
 
-**为什么这样做可以避免补丁问题？**
+**Why does this avoid the patch issue?**
 
-Python 3.8+ 在加载 C 扩展（如 `_socket.pyd`）时使用了 `LoadLibraryExW` 的 `LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS` 标志，这需要目标系统安装 [KB3063858](https://support.microsoft.com/kb/3063858)（或旧版 KB2533623）补丁。缺少补丁时会出现：
+Python 3.8+ uses the `LoadLibraryExW` flags `LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS` when loading C extensions (such as `_socket.pyd`), which requires the target system to have the [KB3063858](https://support.microsoft.com/kb/3063858) patch (or the older KB2533623). Without the patch, you will see:
 
 ```
-ImportError: DLL load failed while importing _socket: 参数错误。
+ImportError: DLL load failed while importing _socket: parameter error.
 ```
 
-Python 3.7 不使用该标志，因此生成的 exe 可以在未打补丁的老系统上直接运行。
+Python 3.7 does not use this flag, so the resulting exe can run directly on unpatched legacy systems.
 
-打包完成后，输出位于 `server/dist/inspection-agent/`，包含：
-- `inspection-agent.exe` — 主程序
-- `start.bat` — 前台运行脚本
-- `start_hidden.vbs` — 后台静默运行脚本（无黑窗口）
-- `check_prereqs.ps1` — 部署前系统兼容性检查脚本
-- 各种依赖 DLL
+After packaging, the output is located at `server/dist/inspection-agent/` and contains:
+- `inspection-agent.exe` — Main program
+- `start.bat` — Foreground run script
+- `start_hidden.vbs` — Background silent run script (no black window)
+- `check_prereqs.ps1` — Pre-deployment system compatibility check script
+- Various dependency DLLs
 
-> 注意：本地默认打包目标为 `ws2008r2`（要求 Python 3.8.x），而 CI 中的 Release 包使用 `--no-patch-required`。
-> 如需本地也生成兼容未打补丁老系统的包，请显式加上 `--no-patch-required`。
+> Note: The local default packaging target is `ws2008r2` (requires Python 3.8.x), while CI Release packages use `--no-patch-required`.
+> To also generate a package locally that is compatible with unpatched legacy systems, explicitly add `--no-patch-required`.
 
-### 部署
+### Deployment
 
-将 `server/dist/inspection-agent/` **整个文件夹**复制到目标 Windows 服务器，
-然后运行 `start.bat` 或 `start_hidden.vbs`。
+Copy the entire `server/dist/inspection-agent/` folder to the target Windows server,
+then run `start.bat` or `start_hidden.vbs`.
 
-部署前建议在目标服务器运行一次 `check_prereqs.ps1`，快速检查补丁状态。
+It is recommended to run `check_prereqs.ps1` once on the target server before deployment to quickly check the patch status.
 
 ---
 
-## 客户端 Windows 打包
+## Client Windows Packaging
 
-### 环境准备
+### Environment Setup
 
 ```bash
 pip install pyinstaller
 pip install -r client/requirements.txt
 ```
 
-### 执行打包
+### Running the Build
 
 ```bash
 python scripts/build_client_windows.py
 ```
 
-打包完成后，输出位于 `client/dist/inspection-client/`，包含：
-- `inspection-client.exe` — 客户端主程序
-- `config.json` — 默认配置文件（可直接修改）
-- `start.bat` — 前台运行脚本
-- `start_json.bat` — 运行并输出 JSON 报告
-- `start_txt.bat` — 运行并输出文本报告
-- 各种依赖 DLL
+After packaging, the output is located at `client/dist/inspection-client/` and contains:
+- `inspection-client.exe` — Client main program
+- `config.json` — Default configuration file (edit directly)
+- `start.bat` — Foreground run script
+- `start_json.bat` — Run and output a JSON report
+- `start_txt.bat` — Run and output a text report
+- Various dependency DLLs
 
-### 部署
+### Deployment
 
-将 `client/dist/inspection-client/` **整个文件夹**复制到目标 Windows 管理机，
-编辑 `config.json` 填入服务器 Agent 地址后，双击 `start.bat` 即可运行。
+Copy the entire `client/dist/inspection-client/` folder to the target Windows management machine,
+edit `config.json` to fill in the server Agent addresses, and double-click `start.bat` to run.
 
 ---
 
-## Linux 打包
+## Linux Packaging
 
-### 环境准备
+### Environment Setup
 
 ```bash
 pip install pyinstaller
 ```
 
-### 执行打包
+### Running the Build
 
 ```bash
 bash scripts/build_linux.sh
 ```
 
-打包完成后，输出位于 `server/dist/inspection-agent/`，包含：
-- `inspection-agent` — ELF 可执行文件（类似 Windows exe）
-- `start.sh` — 启动脚本
-- `inspection-agent.service` — systemd 服务模板
-- 各种依赖 so 库
+After packaging, the output is located at `server/dist/inspection-agent/` and contains:
+- `inspection-agent` — ELF executable (similar to a Windows exe)
+- `start.sh` — Startup script
+- `inspection-agent.service` — systemd service template
+- Various dependency so libraries
 
-### 部署
+### Deployment
 
-**方式一：前台运行**
+**Option 1: Foreground Run**
 ```bash
 cd inspection-agent
 ./start.sh --port 5000
 ```
 
-**方式二：systemd 后台服务（推荐）**
+**Option 2: systemd Background Service (Recommended)**
 ```bash
 sudo cp inspection-agent/inspection-agent.service /etc/systemd/system/
 sudo systemctl daemon-reload
@@ -155,36 +157,36 @@ sudo systemctl enable --now inspection-agent
 sudo systemctl status inspection-agent
 ```
 
-### 兼容性提示
+### Compatibility Notes
 
-PyInstaller 打包的 Linux 可执行文件依赖构建时的 glibc 版本，
-建议在**目标系统相同或更旧的系统**上打包，以确保兼容性。
+Linux executables packaged by PyInstaller depend on the glibc version used at build time.
+It is recommended to build on a system that is the same age as or older than the target system to ensure compatibility.
 
-例如：
-- 目标机是 CentOS 7 → 建议在 CentOS 7 或兼容环境上打包
-- 目标机是 Ubuntu 20.04 → 建议在 Ubuntu 20.04 上打包
+For example:
+- Target machine is CentOS 7 → recommend building on CentOS 7 or a compatible environment
+- Target machine is Ubuntu 20.04 → recommend building on Ubuntu 20.04
 
 ---
 
-## 常见问题
+## FAQ
 
-**Q: 打包后的程序无法运行，提示缺少 DLL/so？**
-A: `--onedir` 模式已包含所有依赖，请确保复制的是**整个文件夹**而不是单个 exe 文件。
+**Q: The packaged program fails to run, reporting missing DLL/so files?**
+A: The `--onedir` mode already includes all dependencies. Make sure you copied the **entire folder**, not just a single exe file.
 
-**Q: 运行时报 `ImportError: DLL load failed while importing _socket: 参数错误`？**
-A: 这是 Windows Server 2008 R2 / Win7 缺少 [KB3063858](https://support.microsoft.com/kb/3063858) 补丁的典型表现。
-   如果允许，在目标服务器安装该补丁后重启即可。
-   如果**无法安装补丁**，请使用 `--no-patch-required` 模式重新打包：
+**Q: It reports `ImportError: DLL load failed while importing _socket: parameter error` at runtime?**
+A: This is the typical symptom of Windows Server 2008 R2 / Win7 missing the [KB3063858](https://support.microsoft.com/kb/3063858) patch.
+   If allowed, install the patch on the target server and restart.
+   If **the patch cannot be installed**, repackage using the `--no-patch-required` mode:
    ```bash
    python scripts/build_windows.py --no-patch-required
    ```
 
-**Q: Windows Server 2008 上提示不支持 / 缺少 api-ms-win-core-path-l1-1-0.dll？**
-A: 请检查打包时使用的 Python 版本。WS2008 非 R2 最高支持 Python 3.7，WS2008 R2 最高支持 3.8。
-   打包脚本默认以 WS2008 R2 为目标，若当前 Python 为 3.9+ 会直接报错并提示切换版本。
-   也可显式指定目标：`--target ws2008r2`（默认）、`--target ws2008`、`--target modern`。
-   如无法安装补丁且必须部署到老系统，请使用 `--no-patch-required`。
+**Q: On Windows Server 2008 it reports not supported / missing api-ms-win-core-path-l1-1-0.dll?**
+A: Check the Python version used for packaging. WS2008 non-R2 supports up to Python 3.7, and WS2008 R2 supports up to Python 3.8.
+   The packaging script defaults to WS2008 R2; if the current Python is 3.9+, it will report an error and prompt you to switch versions.
+   You can also explicitly specify the target: `--target ws2008r2` (default), `--target ws2008`, or `--target modern`.
+   If the patch cannot be installed and you must deploy to a legacy system, use `--no-patch-required`.
 
-**Q: 能否打包成单文件（--onefile）？**
-A: 可以，但 `--onedir` 模式启动更快、兼容性更好，尤其适合老系统。如需单文件，
-   修改脚本中的 `--onedir` 为 `--onefile` 即可。
+**Q: Can it be packaged as a single file (--onefile)?**
+A: Yes, but `--onedir` mode starts faster and has better compatibility, especially for legacy systems. If you need a single file,
+   change `--onedir` to `--onefile` in the script.
