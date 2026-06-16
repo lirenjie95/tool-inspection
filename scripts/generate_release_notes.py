@@ -111,8 +111,6 @@ def build_chinese_section(whats_changed_lines: list) -> str:
         if stripped.startswith("* "):
             title = stripped[2:]
             chinese_lines.append(f"* {translate_prefix(title)}")
-        elif stripped:
-            chinese_lines.append(line)
     return "\n".join(chinese_lines)
 
 
@@ -131,20 +129,17 @@ def main() -> int:
     body = generate_notes(repo, tag, token)
     prefix, whats_changed_lines, suffix = split_sections(body)
 
-    sections = []
+    english_section = "\n".join(whats_changed_lines).strip()
+    chinese_section = build_chinese_section(whats_changed_lines)
+
+    main_body = english_section + "\n\n" + chinese_section
     if prefix:
-        sections.append(prefix)
+        main_body = prefix + "\n\n" + main_body
 
-    # English section
-    sections.append("\n".join(whats_changed_lines).strip())
-
-    # Chinese section
-    sections.append(build_chinese_section(whats_changed_lines))
-
-    if suffix:
-        sections.append(suffix)
-
-    print("\n\n".join(sections))
+    # Match the format used for existing releases:
+    # English section, blank line, Chinese section, two blank lines, Full Changelog.
+    output = main_body + "\n\n\n" + suffix if suffix else main_body
+    print(output)
     return 0
 
 

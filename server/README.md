@@ -1,15 +1,15 @@
-# Server Inspection Agent (Standalone Deployment Package)
+# Server Inspection Agent (Standalone Deployment Package) / 服务器巡检 Agent（独立部署包）
 
 [中文文档](README_zh.md)
 
 This folder contains the Agent program that needs to run on **each server being inspected**.
 
-## How It Works
+## How It Works / 原理
 
 The Agent runs a lightweight HTTP service locally on the server. It collects information such as disk usage via local PowerShell/df commands,
 and responds to HTTP queries from the local inspection client.
 
-## Project Structure
+## Project Structure / 项目结构
 
 ```
 server/
@@ -24,7 +24,7 @@ server/
 └── README.md             # This file
 ```
 
-## Deployment Requirements
+## Deployment Requirements / 部署要求
 
 **Supported platforms:** Windows / Linux
 
@@ -37,11 +37,11 @@ server/
 - Windows is packaged as an exe, Linux as an ELF
 - See `scripts/README.md` in the project root for details
 
-## Deployment Steps
+## Deployment Steps / 部署步骤
 
 ### Windows
 
-#### Option A: Run Python Directly
+#### Option A: Run Python Directly / 方式 A：直接运行 Python
 
 1. Copy this folder to the target server (via RDP paste, shared folder, or FTP).
 2. Open Command Prompt or PowerShell, enter this folder, and run:
@@ -49,7 +49,7 @@ server/
    python agent.py --port 5000
    ```
 
-#### Option B: Run the Packaged Executable
+#### Option B: Run the Packaged Executable / 方式 B：运行打包后的可执行程序
 
 See the "Packaging and Deployment" section below.
 
@@ -57,7 +57,7 @@ See the "Packaging and Deployment" section below.
 
 ### Linux
 
-#### Option A: Run Python Directly
+#### Option A: Run Python Directly / 方式 A：直接运行 Python
 
 1. Copy this folder to the target server (via SCP, SFTP, or rsync):
    ```bash
@@ -70,7 +70,7 @@ See the "Packaging and Deployment" section below.
    python3 agent.py --port 5000
    ```
 
-#### Option B: systemd Background Service (Recommended)
+#### Option B: systemd Background Service (Recommended) / 方式 B：systemd 后台服务（推荐）
 
 1. Copy files to `/opt/inspection-agent/`.
 2. Create the systemd service file `/etc/systemd/system/inspection-agent.service`:
@@ -96,7 +96,7 @@ See the "Packaging and Deployment" section below.
    sudo systemctl status inspection-agent
    ```
 
-#### Option C: Package as an ELF Executable
+#### Option C: Package as an ELF Executable / 方式 C：打包成 ELF 可执行程序
 
 If the target server has an outdated Python version or no Python at all, package it as a standalone ELF:
 ```bash
@@ -105,7 +105,7 @@ bash scripts/build_linux.sh
 Then copy `server/dist/inspection-agent/` to the target server and run it.
 See `scripts/README.md` for details.
 
-### Output Language
+### Output Language / 输出语言
 
 The Agent's startup/shutdown logs default to Chinese. To output them in English:
 
@@ -115,7 +115,7 @@ python agent.py --port 5000 --lang en
 
 ---
 
-### Startup Verification
+### Startup Verification / 启动验证
 
 The Agent listens on `0.0.0.0:5000` by default (the port can be changed via `--port`).
 After starting, test locally on the server, regardless of Windows or Linux:
@@ -146,7 +146,7 @@ It should return health data in JSON format, for example:
 
 > For a lightweight liveness probe, use `GET /ping`, which returns `{"status": "ok"}` without performing any collection.
 
-### Firewall Rule
+### Firewall Rule / 防火墙放通
 
 Make sure the local server firewall allows inbound connections to the Agent port (default 5000).
 One-click PowerShell allow rule:
@@ -155,9 +155,9 @@ One-click PowerShell allow rule:
 New-NetFirewallRule -DisplayName "InspectionAgent" -Direction Inbound -Protocol TCP -LocalPort 5000 -Action Allow
 ```
 
-## Packaging and Deployment
+## Packaging and Deployment / 打包部署
 
-### Windows Packaging (exe)
+### Windows Packaging (exe) / Windows 打包（exe）
 
 Run on the development/packaging machine:
 
@@ -183,7 +183,7 @@ start_hidden.vbs   # Run silently in background (no black window)
 > ```
 > This mode uses the Python 3.7 embedded runtime for packaging; the resulting exe can run directly on unpatched Win7/2008 R2 systems.
 
-### Linux Packaging (ELF)
+### Linux Packaging (ELF) / Linux 打包（ELF）
 
 ```bash
 bash scripts/build_linux.sh
@@ -199,7 +199,7 @@ After packaging, `inspection-agent.service` is automatically generated and can b
 
 ---
 
-## Running in the Background on Windows (Optional)
+## Running in the Background on Windows (Optional) / Windows 后台运行（可选）
 
 **Option A: Wrap as a Windows Service with nssm (Recommended)**
 
@@ -227,7 +227,7 @@ Start-Process python -ArgumentList "agent.py","--port","5000" -WindowStyle Hidde
 
 The packaged folder contains `start_hidden.vbs`; double-click it to run silently in the background.
 
-## API Reference
+## API Reference / 接口说明
 
 ### GET /health
 
@@ -249,7 +249,7 @@ Lightweight liveness probe; does not perform any collection, returns:
 {"status": "ok"}
 ```
 
-## Extending Services
+## Extending Services / 扩展服务
 
 To add new inspection items (such as IIS, SQL Server, event logs, etc.; CPU, memory, and disk are already built-in), follow these steps:
 
@@ -282,7 +282,7 @@ To add new inspection items (such as IIS, SQL Server, event logs, etc.; CPU, mem
 
    Parse and display the new `sqlserver` field in `client/main.py`.
 
-## Linux Support Notes
+## Linux Support Notes / Linux 支持说明
 
 The Agent fully supports Linux. `services/disk.py` automatically detects the operating system:
 - **Windows**: Retrieves information for **all local disks** via PowerShell (automatically includes C:, D:, E:, etc.)

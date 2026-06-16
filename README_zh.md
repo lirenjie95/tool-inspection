@@ -1,9 +1,9 @@
-# 服务器巡检脚本（Agent-Client 架构）
+# Server Inspection Scripts (Agent-Client Architecture) / 服务器巡检脚本（Agent-Client 架构）
 
 针对内网 Windows 服务器的轻量级巡检工具，采用 **Agent-Client** 模式，
 无需 SSH/WinRM/WMI 等复杂远程协议。
 
-## 架构说明
+## Architecture / 架构说明
 
 ```
 ┌─────────────────┐      HTTP (内网)      ┌─────────────────┐
@@ -24,7 +24,7 @@
 - **内置 CPU / 内存 / 磁盘采集**，开箱即用
 - 新增服务只需在 `server/services/` 下新建文件
 
-## 项目结构
+## Project Structure / 项目结构
 
 ```
 .
@@ -57,7 +57,7 @@
 └── README.md                 # 本文件
 ```
 
-## 环境要求
+## Requirements / 环境要求
 
 | 组件 | 要求 |
 |------|------|
@@ -66,9 +66,9 @@
 | 客户端 | 仅需 `requests` |
 | 网络 | 内网互通，Agent 端口放通 |
 
-## 快速开始
+## Quick Start / 快速开始
 
-### 第一步：在每台服务器上部署 Agent
+### Step 1: Deploy the Agent on Each Server / 第一步：在每台服务器上部署 Agent
 
 根据目标服务器是否有 Python 环境，选择以下方式之一：
 
@@ -115,7 +115,7 @@ New-NetFirewallRule -DisplayName "InspectionAgent" -Direction Inbound -Protocol 
 - `GET /health`：返回完整健康数据（磁盘、CPU、内存等）
 - `GET /ping`：轻量级存活探测，返回 `{"status": "ok"}`
 
-### 第二步：在本地配置客户端
+### Step 2: Configure the Client Locally / 第二步：在本地配置客户端
 
 1. 安装依赖：
    ```bash
@@ -145,7 +145,7 @@ New-NetFirewallRule -DisplayName "InspectionAgent" -Direction Inbound -Protocol 
    > 默认阈值 30GB 表示该服务器所有磁盘剩余空间之和需 ≥30GB；数据库角色同样要求
    > 总剩余空间 ≥30GB。如需为数据库角色设置更高阈值，可调整 `ROLE_DISK_THRESHOLDS_GB.db`。
 
-### 第三步：运行巡检
+### Step 3: Run the Inspection / 第三步：运行巡检
 
 ```bash
 cd client
@@ -166,7 +166,7 @@ python main.py --config config_prod.py
 python main.py --lang en
 ```
 
-### 输出示例
+### Sample Output / 输出示例
 
 > 以下示例使用默认磁盘阈值 30GB。若配置了 `ROLE_DISK_THRESHOLDS_GB`，会按对应角色的阈值判断。
 > 输出会按 `role` 字段对服务器分组展示（如 `app`、`db`），未匹配到预定义角色名时显示为 `{role} 服务器巡检`。
@@ -200,7 +200,7 @@ python main.py --lang en
 ============================================================
 ```
 
-### 第四步：打包客户端为 Windows 可执行程序（可选）
+### Step 4: Package the Client as a Windows Executable (Optional) / 第四步：打包客户端为 Windows 可执行程序（可选）
 
 如果管理机没有 Python 环境，可将客户端打包为独立 exe：
 
@@ -222,14 +222,14 @@ python scripts/build_client_windows.py
 > CI/CD 已同步支持：推送 `v*` 标签时会自动构建 `inspection-client-windows.zip`
 > 并上传到 GitHub Release。
 
-## 扩展指南
+## Extension Guide / 扩展指南
 
-### 新增服务器
+### Add a New Server / 新增服务器
 
 只需在 `client/config.json` 的 `SERVERS` 列表中添加 IP 和端口，
 并在对应服务器上启动 `server/agent.py` 即可。
 
-### 新增巡检服务（如 IIS、SQL Server）
+### Add a New Inspection Service (e.g., IIS, SQL Server) / 新增巡检服务（如 IIS、SQL Server）
 
 **服务端扩展：**
 
@@ -270,7 +270,7 @@ python scripts/build_client_windows.py
 > **注意：** CPU、内存、磁盘已作为内置服务实现，分别位于 `server/services/cpu.py`、
 > `server/services/memory.py`、`server/services/disk.py`，无需额外扩展即可使用。
 
-### Linux 服务器支持
+### Linux Server Support / Linux 服务器支持
 
 同一份 `server/agent.py` 可直接运行在 Linux 上，自动通过 `df -BG` 采集所有真实挂载点（如 `/`、`/data`、`/home` 等），并自动过滤 `tmpfs`、`devtmpfs` 等伪文件系统。
 
@@ -310,7 +310,7 @@ bash scripts/build_linux.sh
 打包后会生成 `inspection-agent` ELF 可执行文件和 systemd service 模板，
 和 Windows exe 一样无需目标机安装 Python。详见 `scripts/README.md`。
 
-## 测试
+## Testing / 测试
 
 项目包含 `tests/test_client.py` 和 `tests/test_server.py`，覆盖客户端配置加载、
 服务器巡检判断、Agent 接口以及各采集服务的主要分支。
@@ -333,7 +333,7 @@ python -m coverage report --include="server/*,client/*" -m
 > 提示：`tests/test_server.py` 中的 HTTP Handler 测试会启动真实 HTTP 服务，
 > 使用临时端口，无需手动启动 Agent。
 
-## 输出语言
+## Output Language / 输出语言
 
 本项目所有命令行工具默认输出**中文**，同时支持切换到**英文**。
 
@@ -351,7 +351,7 @@ python -m coverage report --include="server/*,client/*" -m
 - **Linux 打包脚本**
   - `OUTPUT_LANG=en bash scripts/build_linux.sh`
 
-## 故障排查
+## Troubleshooting / 故障排查
 
 | 现象 | 排查步骤 |
 |------|---------|
@@ -361,7 +361,7 @@ python -m coverage report --include="server/*,client/*" -m
 | 网页检测失败 | 确认 URL 正确；确认本地网络可访问目标网页 |
 | 启动报 `_socket: 参数错误` | 老系统（Win7/2008 R2）缺少 KB3063858 补丁；如无法安装补丁，请用 `--no-patch-required` 模式重新打包 |
 
-## 安全建议
+## Security Recommendations / 安全建议
 
 - Agent 默认监听 `0.0.0.0`，建议**仅在内网使用**，不要暴露到公网
 - 如需更高安全性，可在 Agent 前加 Nginx/iptables 限制访问源 IP

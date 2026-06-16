@@ -1,11 +1,11 @@
-# Server Inspection Scripts (Agent-Client Architecture)
+# Server Inspection Scripts (Agent-Client Architecture) / 服务器巡检脚本（Agent-Client 架构）
 
 [中文文档](README_zh.md)
 
 A lightweight inspection tool for intranet Windows servers using an **Agent-Client** model,
 without requiring complex remote protocols such as SSH/WinRM/WMI.
 
-## Architecture
+## Architecture / 架构说明
 
 ```
 ┌─────────────────┐      HTTP (intranet)   ┌─────────────────┐
@@ -26,7 +26,7 @@ without requiring complex remote protocols such as SSH/WinRM/WMI.
 - **Built-in CPU / memory / disk collection**, ready to use out of the box
 - Add new services by simply creating a new file under `server/services/`
 
-## Project Structure
+## Project Structure / 项目结构
 
 ```
 .
@@ -59,7 +59,7 @@ without requiring complex remote protocols such as SSH/WinRM/WMI.
 └── README.md                 # This file
 ```
 
-## Requirements
+## Requirements / 环境要求
 
 | Component | Requirement |
 |-----------|-------------|
@@ -68,9 +68,9 @@ without requiring complex remote protocols such as SSH/WinRM/WMI.
 | Client side | Only `requests` |
 | Network | Intranet connectivity; Agent port accessible |
 
-## Quick Start
+## Quick Start / 快速开始
 
-### Step 1: Deploy the Agent on Each Server
+### Step 1: Deploy the Agent on Each Server / 第一步：在每台服务器上部署 Agent
 
 Choose one of the following methods depending on whether Python is available on the target server.
 
@@ -117,7 +117,7 @@ New-NetFirewallRule -DisplayName "InspectionAgent" -Direction Inbound -Protocol 
 - `GET /health`: Returns full health data (disk, CPU, memory, etc.)
 - `GET /ping`: Lightweight liveness probe returning `{"status": "ok"}`
 
-### Step 2: Configure the Client Locally
+### Step 2: Configure the Client Locally / 第二步：在本地配置客户端
 
 1. Install dependencies:
    ```bash
@@ -147,7 +147,7 @@ New-NetFirewallRule -DisplayName "InspectionAgent" -Direction Inbound -Protocol 
    > the default threshold of 30GB means the sum of free space across all disks on the server must be ≥30GB; the `db` role also requires
    > total free space ≥30GB. To set a higher threshold for the database role, adjust `ROLE_DISK_THRESHOLDS_GB.db`.
 
-### Step 3: Run the Inspection
+### Step 3: Run the Inspection / 第三步：运行巡检
 
 ```bash
 cd client
@@ -168,7 +168,7 @@ python main.py --config config_prod.py
 python main.py --lang en
 ```
 
-### Sample Output
+### Sample Output / 输出示例
 
 > The example below uses the default disk threshold of 30GB. If `ROLE_DISK_THRESHOLDS_GB` is configured, the corresponding role threshold is used.
 > Output is grouped by the `role` field (e.g., `app`, `db`); when no predefined role name is matched, it is displayed as `{role} Server Inspection`.
@@ -202,7 +202,7 @@ Inspection Summary
 ============================================================
 ```
 
-### Step 4: Package the Client as a Windows Executable (Optional)
+### Step 4: Package the Client as a Windows Executable (Optional) / 第四步：打包客户端为 Windows 可执行程序（可选）
 
 If the management machine does not have Python, you can package the client as a standalone exe:
 
@@ -224,14 +224,14 @@ edit `config.json`, and double-click `start.bat` to run.
 > CI/CD is also supported: pushing a `v*` tag automatically builds `inspection-client-windows.zip`
 > and uploads it to the GitHub Release.
 
-## Extension Guide
+## Extension Guide / 扩展指南
 
-### Add a New Server
+### Add a New Server / 新增服务器
 
 Simply add the IP and port to the `SERVERS` list in `client/config.json`,
 and start `server/agent.py` on the corresponding server.
 
-### Add a New Inspection Service (e.g., IIS, SQL Server)
+### Add a New Inspection Service (e.g., IIS, SQL Server) / 新增巡检服务（如 IIS、SQL Server）
 
 **Server-side extension:**
 
@@ -272,7 +272,7 @@ Parse and display the new fields returned by the server in `client/main.py`. Usu
 > **Note:** CPU, memory, and disk are already implemented as built-in services, located at `server/services/cpu.py`,
 > `server/services/memory.py`, and `server/services/disk.py` respectively. No additional extension is needed to use them.
 
-### Linux Server Support
+### Linux Server Support / Linux 服务器支持
 
 The same `server/agent.py` can run directly on Linux. It automatically collects all real mount points (such as `/`, `/data`, `/home`, etc.) via `df -BG`, and filters out pseudo filesystems such as `tmpfs` and `devtmpfs`.
 
@@ -312,7 +312,7 @@ bash scripts/build_linux.sh
 After packaging, an `inspection-agent` ELF executable and a systemd service template are generated.
 Like the Windows exe, the target machine does not need Python installed. See `scripts/README.md` for details.
 
-## Testing
+## Testing / 测试
 
 The project includes `tests/test_client.py` and `tests/test_server.py`, covering client configuration loading,
 server inspection logic, Agent endpoints, and major branches of each collection service.
@@ -335,7 +335,7 @@ python -m coverage report --include="server/*,client/*" -m
 > Tip: The HTTP Handler tests in `tests/test_server.py` start a real HTTP service on a temporary port;
 > no manual Agent startup is required.
 
-## Output Language
+## Output Language / 输出语言
 
 All command-line tools in this project default to **Chinese** output and can be switched to **English**.
 
@@ -353,7 +353,7 @@ All command-line tools in this project default to **Chinese** output and can be 
 - **Linux packaging script**
   - `OUTPUT_LANG=en bash scripts/build_linux.sh`
 
-## Troubleshooting
+## Troubleshooting / 故障排查
 
 | Symptom | Troubleshooting Steps |
 |---------|----------------------|
@@ -363,7 +363,7 @@ All command-line tools in this project default to **Chinese** output and can be 
 | Web page check failed | Confirm the URL is correct; confirm the local network can access the target web page |
 | Startup error `_socket: parameter error` | Legacy systems (Win7/2008 R2) are missing the KB3063858 patch; if the patch cannot be installed, repackage using `--no-patch-required` mode |
 
-## Security Recommendations
+## Security Recommendations / 安全建议
 
 - The Agent listens on `0.0.0.0` by default. It is recommended to **use it only in an intranet** and not expose it to the public internet.
 - For higher security, place Nginx/iptables in front of the Agent to restrict source IP access.
