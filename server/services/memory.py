@@ -10,11 +10,36 @@ import platform
 import subprocess
 
 
-def collect():
+# 默认输出语言 / Default output language
+DEFAULT_LANG = "zh"
+
+# 翻译表 / Translation table
+TRANSLATIONS = {
+    "zh": {
+        "powershell_failed": "PowerShell 执行失败: {error}",
+    },
+    "en": {
+        "powershell_failed": "PowerShell execution failed: {error}",
+    },
+}
+
+
+def t(key: str, lang: str = DEFAULT_LANG, **kwargs) -> str:
+    """获取指定语言的翻译文本 / Get translated text for the specified language."""
+    text = TRANSLATIONS.get(lang, TRANSLATIONS[DEFAULT_LANG]).get(key, key)
+    if kwargs:
+        return text.format(**kwargs)
+    return text
+
+
+def collect(lang: str = DEFAULT_LANG):
     """
     采集内存使用情况。
 
     Collect memory usage.
+
+    Args:
+        lang: 输出语言 (默认 zh) / Output language (default zh).
 
     Returns:
         dict: 包含 total_mb, free_mb, used_percent
@@ -22,12 +47,12 @@ def collect():
     """
     os_type = platform.system()
     if os_type == "Windows":
-        return _collect_windows()
+        return _collect_windows(lang=lang)
     else:
-        return _collect_linux()
+        return _collect_linux(lang=lang)
 
 
-def _collect_windows():
+def _collect_windows(lang: str = DEFAULT_LANG):
     """Windows: 通过 PowerShell 获取内存信息。
 
     Windows: get memory information via PowerShell.
@@ -43,7 +68,7 @@ def _collect_windows():
         text=True,
     )
     if result.returncode != 0:
-        raise RuntimeError(f"PowerShell 执行失败: {result.stderr}")
+        raise RuntimeError(t("powershell_failed", lang, error=result.stderr))
 
     data = json.loads(result.stdout)
     total_kb = data.get("TotalVisibleMemorySize", 0)
@@ -60,7 +85,7 @@ def _collect_windows():
     }
 
 
-def _collect_linux():
+def _collect_linux(lang: str = DEFAULT_LANG):
     """Linux: 通过 free 命令获取内存信息。
 
     Linux: get memory information via the free command.

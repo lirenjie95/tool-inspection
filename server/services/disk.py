@@ -10,11 +10,36 @@ import platform
 import subprocess
 
 
-def collect():
+# 默认输出语言 / Default output language
+DEFAULT_LANG = "zh"
+
+# 翻译表 / Translation table
+TRANSLATIONS = {
+    "zh": {
+        "powershell_failed": "PowerShell 执行失败: {error}",
+    },
+    "en": {
+        "powershell_failed": "PowerShell execution failed: {error}",
+    },
+}
+
+
+def t(key: str, lang: str = DEFAULT_LANG, **kwargs) -> str:
+    """获取指定语言的翻译文本 / Get translated text for the specified language."""
+    text = TRANSLATIONS.get(lang, TRANSLATIONS[DEFAULT_LANG]).get(key, key)
+    if kwargs:
+        return text.format(**kwargs)
+    return text
+
+
+def collect(lang: str = DEFAULT_LANG):
     """
     采集磁盘信息。
 
     Collect disk information.
+
+    Args:
+        lang: 输出语言 (默认 zh) / Output language (default zh).
 
     Returns:
         list[dict]: 磁盘列表，每个元素包含 DeviceID, FreeSpaceGB, SizeGB
@@ -22,12 +47,12 @@ def collect():
     """
     os_type = platform.system()
     if os_type == "Windows":
-        return _collect_windows()
+        return _collect_windows(lang=lang)
     else:
-        return _collect_linux()
+        return _collect_linux(lang=lang)
 
 
-def _collect_windows():
+def _collect_windows(lang: str = DEFAULT_LANG):
     """Windows: 通过 PowerShell 获取所有本地磁盘信息。
 
     Windows: get information for all local disks via PowerShell.
@@ -46,7 +71,7 @@ def _collect_windows():
         text=True,
     )
     if result.returncode != 0:
-        raise RuntimeError(f"PowerShell 执行失败: {result.stderr}")
+        raise RuntimeError(t("powershell_failed", lang, error=result.stderr))
 
     data = json.loads(result.stdout)
     # PowerShell 单条记录返回 dict，多条返回 list，统一为 list
@@ -56,7 +81,7 @@ def _collect_windows():
     return data
 
 
-def _collect_linux():
+def _collect_linux(lang: str = DEFAULT_LANG):
     """
     Linux: 使用 df 获取所有真实挂载点磁盘信息。
     自动过滤伪文件系统（如 devtmpfs、tmpfs、overlay 等）。
@@ -66,6 +91,8 @@ def _collect_linux():
     """
     import os
     import subprocess
+    # lang 保留给未来需要本地化 Linux 错误提示时使用
+    # lang is reserved for future localization of Linux error messages
 
     # 需要忽略的伪文件系统类型
     # Pseudo filesystem types to ignore

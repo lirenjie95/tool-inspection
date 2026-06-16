@@ -64,6 +64,7 @@ TRANSLATIONS = {
         "press_ctrl_c_to_stop": "按 Ctrl+C 停止",
         "agent_stopping": "Agent 正在停止...",
         "agent_stopped": "Agent 已停止",
+        "not_found": "未找到",
     },
     "en": {
         "argparse_description": "Server inspection Agent",
@@ -75,6 +76,7 @@ TRANSLATIONS = {
         "press_ctrl_c_to_stop": "Press Ctrl+C to stop",
         "agent_stopping": "Agent is stopping...",
         "agent_stopped": "Agent stopped",
+        "not_found": "not found",
     },
 }
 
@@ -99,29 +101,33 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def _safe_collect(name, collector):
+def _safe_collect(name, collector, lang=None):
     """安全执行采集函数，单个服务异常不影响整体返回。
 
     Safely execute a collector so a single service failure does not affect the overall response.
     """
+    if lang is None:
+        lang = _CURRENT_LANG
     try:
-        return collector()
+        return collector(lang=lang)
     except Exception as e:
         logger.warning(t("collect_service_failed", name=name, error=e))
         return {"error": str(e), "traceback": traceback.format_exc()}
 
 
-def get_health_data():
+def get_health_data(lang=None):
     """组装健康检查数据。
 
     Assemble health-check data.
     """
+    if lang is None:
+        lang = _CURRENT_LANG
     data = {
         "status": "running",
         "os": platform.system(),
-        "disks": _safe_collect("disk", collect_disk),
-        "cpu": _safe_collect("cpu", collect_cpu),
-        "memory": _safe_collect("memory", collect_memory),
+        "disks": _safe_collect("disk", collect_disk, lang=lang),
+        "cpu": _safe_collect("cpu", collect_cpu, lang=lang),
+        "memory": _safe_collect("memory", collect_memory, lang=lang),
     }
 
     # 扩展点：新增服务在此加入返回数据

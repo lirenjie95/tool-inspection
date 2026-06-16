@@ -18,11 +18,18 @@ To add IIS status checks to the inspection, follow these steps:
 """
 
 
-def collect():
+# 默认输出语言 / Default output language
+DEFAULT_LANG = "zh"
+
+
+def collect(lang: str = DEFAULT_LANG):
     """
     采集 IIS 运行状态。
 
     Collect IIS running status.
+
+    Args:
+        lang: 输出语言 (默认 zh) / Output language (default zh).
 
     Returns:
         dict: 包含 service_status, sites 等字段
