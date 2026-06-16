@@ -18,9 +18,10 @@ import re
 import sys
 import urllib.request
 import urllib.error
+from typing import Optional
 
 
-# Conventional commit / PR title prefix translation
+# Conventional commit / PR title prefix translation (fallback)
 PREFIX_MAP = {
     "feat(build)": "功能（构建）",
     "feat": "功能",
@@ -51,6 +52,27 @@ def translate_prefix(title: str) -> str:
     return f"{zh_prefix}：{rest}"
 
 
+def translate_titles(titles: list) -> Optional[list]:
+    """Translate a list of PR titles to Chinese using a free translator.
+
+    Returns None if translation fails, so the caller can omit the Chinese section
+    instead of failing the whole release.
+    """
+    try:
+        from deep_translator import GoogleTranslator
+    except ImportError:
+        return None
+
+    try:
+        translator = GoogleTranslator(source="en", target="zh-CN")
+        # Translate in one batch to reduce the chance of hitting rate limits.
+        joined = "\n---TITLE---\n".join(titles)
+        translated = translator.translate(joined)
+        return [t.strip() for t in translated.split("---TITLE---")]
+    except Exception:
+        return None
+
+
 def generate_notes(repo: str, tag: str, token: str) -> str:
     """Call GitHub API to generate release notes for the given tag."""
     url = f"https://api.github.com/repos/{repo}/releases/generate-notes"
@@ -72,7 +94,7 @@ def generate_notes(repo: str, tag: str, token: str) -> str:
 
 
 def split_sections(body: str) -> tuple:
-    """Split auto-generated release notes into header, what's changed, and footer.
+    """Split auto-generated release notes into prefix, what's changed, and suffix.
 
     Returns (prefix, whats_changed_lines, suffix).
     """
@@ -103,14 +125,27 @@ def split_sections(body: str) -> tuple:
     )
 
 
-def build_chinese_section(whats_changed_lines: list) -> str:
-    """Build the Chinese '更新内容' section from the English PR list."""
-    chinese_lines = ["## 更新内容", ""]
+def build_chinese_section(whats_changed_lines: list) -> Optional[str]:
+    """Build the Chinese '更新内容' section from the English PR list.
+
+    Returns None if translation fails, so the release can fall back to English only.
+    """
+    titles = []
     for line in whats_changed_lines:
         stripped = line.strip()
         if stripped.startswith("* "):
-            title = stripped[2:]
-            chinese_lines.append(f"* {translate_prefix(title)}")
+            titles.append(stripped[2:])
+
+    if not titles:
+        return None
+
+    translated = translate_titles(titles)
+    if translated is None:
+        return None
+
+    chinese_lines = ["## 更新内容", ""]
+    for t in translated:
+        chinese_lines.append(f"* {t}")
     return "\n".join(chinese_lines)
 
 
@@ -132,13 +167,20 @@ def main() -> int:
     english_section = "\n".join(whats_changed_lines).strip()
     chinese_section = build_chinese_section(whats_changed_lines)
 
-    main_body = english_section + "\n\n" + chinese_section
+    main_body = english_section
+    if chinese_section:
+        main_body = main_body + "\n\n" + chinese_section
     if prefix:
         main_body = prefix + "\n\n" + main_body
 
-    # Match the format used for existing releases:
+    # Match the format used for existing releases when Chinese is present:
     # English section, blank line, Chinese section, two blank lines, Full Changelog.
-    output = main_body + "\n\n\n" + suffix if suffix else main_body
+    # When Chinese is omitted, use one blank line before Full Changelog.
+    if suffix:
+        separator = "\n\n\n" if chinese_section else "\n\n"
+        output = main_body + separator + suffix
+    else:
+        output = main_body
     print(output)
     return 0
 

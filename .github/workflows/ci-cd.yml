@@ -241,6 +241,14 @@ jobs:
           name: windows-client-build
           path: ./artifacts
 
+      - name: Set up Python for release notes
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install release notes dependencies
+        run: pip install deep-translator
+
       - name: Generate bilingual release notes
         run: python3 scripts/generate_release_notes.py > release-notes.md
         env:
