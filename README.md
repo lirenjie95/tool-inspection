@@ -30,33 +30,33 @@ without requiring complex remote protocols such as SSH/WinRM/WMI.
 
 ```
 .
-├── client/                    # Local inspection endpoint (run on one management machine)
-│   ├── main.py               # Inspection entry point
-│   ├── config.json           # Server Agent address configuration
-│   └── requirements.txt      # pip install -r requirements.txt
-├── server/                    # Server Agent (deploy on each inspected server)
-│   ├── agent.py              # HTTP service entry point (pure standard library)
-│   ├── services/             # Inspection service extension directory
+├── client/                     # Local inspection endpoint (run on one management machine)
+│   ├── main.py                 # Inspection entry point
+│   ├── config.json             # Server Agent address configuration
+│   └── requirements.txt        # pip install -r requirements.txt
+├── server/                     # Server Agent (deploy on each inspected server)
+│   ├── agent.py                # HTTP service entry point (pure standard library)
+│   ├── services/               # Inspection service extension directory
 │   │   ├── __init__.py
-│   │   ├── disk.py           # Disk collection (implemented)
-│   │   ├── cpu.py            # CPU collection (implemented)
-│   │   ├── memory.py         # Memory collection (implemented)
-│   │   └── iis.py            # IIS collection (extension example, enable manually)
-│   ├── requirements.txt      # Zero dependencies
-│   └── README.md             # Agent deployment instructions
-├── scripts/                   # Build scripts
-│   ├── build_windows.py      # Server Windows exe packaging
+│   │   ├── disk.py             # Disk collection (implemented)
+│   │   ├── cpu.py              # CPU collection (implemented)
+│   │   ├── memory.py           # Memory collection (implemented)
+│   │   └── iis.py              # IIS collection (extension example, enable manually)
+│   ├── requirements.txt        # Zero dependencies
+│   └── README.md               # Agent deployment instructions
+├── scripts/                    # Build scripts
+│   ├── build_windows.py        # Server Windows exe packaging
 │   ├── build_client_windows.py # Client Windows exe packaging
-│   ├── build_linux.sh        # Linux ELF packaging
-│   └── README.md             # Packaging instructions
-├── tests/                     # Unit tests
+│   ├── build_linux.sh          # Linux ELF packaging
+│   └── README.md               # Packaging instructions
+├── tests/                      # Unit tests
 │   ├── __init__.py
 │   ├── test_client.py
 │   └── test_server.py
 ├── .github/
 │   └── workflows/
-│       └── ci-cd.yml          # GitHub Actions CI/CD
-└── README.md                 # This file
+│       └── ci-cd.yml           # GitHub Actions CI/CD
+└── README.md                   # This file
 ```
 
 ## Requirements

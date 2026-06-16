@@ -8,6 +8,27 @@ on:
     branches: [main]
 
 jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install lint tools
+        run: pip install flake8
+
+      - name: Run flake8
+        run: |
+          flake8 client/ server/ scripts/ tests/ \
+            --max-line-length=250 \
+            --extend-ignore=E402 \
+
+
   test:
     name: Test & Coverage
     runs-on: ubuntu-latest
@@ -56,7 +77,7 @@ jobs:
 
   build-linux:
     name: Build Linux Executable
-    needs: test
+    needs: [lint, test]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
@@ -113,7 +134,7 @@ jobs:
 
   build-windows:
     name: Build Windows Executable
-    needs: test
+    needs: [lint, test]
     runs-on: windows-latest
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
@@ -139,8 +160,8 @@ jobs:
         env:
           PYTHONIOENCODING: utf-8
         run: |
-          # 使用 --no-patch-required 模式，确保生成的 exe 在未安装 KB3063858/KB2533623 补丁的
-          # Windows Server 2008 R2 / Win7 上也能直接运行
+          # Use --no-patch-required mode so the generated exe can run directly on
+          # Windows Server 2008 R2 / Win7 without KB3063858/KB2533623 patches.
           python scripts/build_windows.py --no-patch-required
           $dist = "server/dist/inspection-agent"
           $winDist = "server/dist/inspection-agent-windows"
@@ -157,7 +178,7 @@ jobs:
 
   build-client-windows:
     name: Build Windows Client Executable
-    needs: test
+    needs: [lint, test]
     runs-on: windows-latest
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
@@ -241,10 +262,23 @@ jobs:
           name: windows-client-build
           path: ./artifacts
 
+      - name: Set up Python for release notes
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install release notes dependencies
+        run: pip install deep-translator
+
+      - name: Generate bilingual release notes
+        run: python3 scripts/generate_release_notes.py > release-notes.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           files: ./artifacts/*
-          generate_release_notes: true
+          body_path: release-notes.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

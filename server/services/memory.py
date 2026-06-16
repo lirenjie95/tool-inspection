@@ -5,7 +5,6 @@
 Memory information collection service.
 """
 
-import json
 import platform
 import subprocess
 

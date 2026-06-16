@@ -136,7 +136,7 @@ def parse_args():
 
 
 def main():
-    args = parse_args()
+    parse_args()
 
     # 切换到项目根目录
     # Switch to the project root directory
