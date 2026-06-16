@@ -109,8 +109,7 @@ def parse_args():
 
     Parse command-line arguments.
     """
-    # 先解析 --lang，使 argparse 帮助信息使用正确语言
-    # Parse --lang first so argparse help text uses the correct language
+    # 先解析 --lang，使 argparse 帮助信息使用正确语言 / Parse --lang first so argparse help text uses the correct language
     pre_parser = argparse.ArgumentParser(add_help=False)
     pre_parser.add_argument(
         "--lang",
@@ -138,8 +137,7 @@ def parse_args():
 def main():
     args = parse_args()
 
-    # 切换到项目根目录
-    # Switch to the project root directory
+    # 切换到项目根目录 / Switch to the project root directory
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     os.chdir(root)
     client_dir = os.path.join(root, "client")
@@ -153,8 +151,7 @@ def main():
         print(t("please_install_pyinstaller"))
         sys.exit(1)
 
-    # 清理旧构建
-    # Clean up old builds
+    # 清理旧构建 / Clean up old builds
     for name in ["build", "dist"]:
         path = os.path.join(client_dir, name)
         if os.path.exists(path):
@@ -164,10 +161,8 @@ def main():
         os.remove(p)
         print(t("cleaned", path=p))
 
-    # 打包
-    # --onedir 模式兼容性更好，避免单文件解压问题
-    # Package
-    # --onedir mode has better compatibility and avoids single-file extraction issues
+    # 打包 / Package
+    # --onedir 模式兼容性更好，避免单文件解压问题 / --onedir mode has better compatibility and avoids single-file extraction issues
     cmd = [
         sys.executable, "-m", "PyInstaller",
         "--name", "inspection-client",
@@ -187,16 +182,14 @@ def main():
 
     dist_dir = os.path.join(client_dir, "dist", "inspection-client")
 
-    # 复制默认配置文件到输出目录，方便用户直接修改
-    # Copy the default config file to the output directory for easy user modification
+    # 复制默认配置文件到输出目录，方便用户直接修改 / Copy the default config file to the output directory for easy user modification
     shutil.copy2(
         os.path.join(client_dir, "config.json"),
         os.path.join(dist_dir, "config.json"),
     )
     print(t("copied_default_config", path=f"{dist_dir}/config.json"))
 
-    # 创建启动脚本
-    # Create startup script
+    # 创建启动脚本 / Create startup script
     bat_path = os.path.join(dist_dir, "start.bat")
     with open(bat_path, "w", encoding="utf-8") as f:
         f.write("@echo off\n")
@@ -204,8 +197,7 @@ def main():
         f.write("inspection-client.exe\n")
         f.write("pause\n")
 
-    # 创建输出 JSON 报告的快捷脚本
-    # Create shortcut script for JSON report output
+    # 创建输出 JSON 报告的快捷脚本 / Create shortcut script for JSON report output
     json_bat_path = os.path.join(dist_dir, "start_json.bat")
     with open(json_bat_path, "w", encoding="utf-8") as f:
         f.write("@echo off\n")
@@ -213,8 +205,7 @@ def main():
         f.write("inspection-client.exe --output report.json\n")
         f.write("pause\n")
 
-    # 创建输出文本报告的快捷脚本
-    # Create shortcut script for text report output
+    # 创建输出文本报告的快捷脚本 / Create shortcut script for text report output
     txt_bat_path = os.path.join(dist_dir, "start_txt.bat")
     with open(txt_bat_path, "w", encoding="utf-8") as f:
         f.write("@echo off\n")

@@ -175,16 +175,14 @@ def t(key: str, lang: str = None, **kwargs) -> str:
     return text
 
 
-# 目标系统与最高支持的 Python 版本
-# Target systems and the maximum supported Python version
+# 目标系统与最高支持的 Python 版本 / Target systems and the maximum supported Python version
 TARGET_COMPATIBILITY = {
     "ws2008": (3, 7),      # Windows Server 2008（非 R2）
     "ws2008r2": (3, 8),    # Windows Server 2008 R2（默认目标）
     "modern": None,        # Server 2012+ / Win8.1+，无限制
 }
 
-# Python 3.7 嵌入式运行时配置（用于 --no-patch-required 模式）
-# Python 3.7 embedded runtime configuration (for --no-patch-required mode)
+# Python 3.7 嵌入式运行时配置（用于 --no-patch-required 模式） / Python 3.7 embedded runtime configuration (for --no-patch-required mode)
 PY37_VERSION = "3.7.9"
 PY37_EMBED_ZIP = "python-3.7.9-embed-amd64.zip"
 PY37_EMBED_URL = f"https://www.python.org/ftp/python/{PY37_VERSION}/{PY37_EMBED_ZIP}"
@@ -216,23 +214,20 @@ def check_python_compatibility(target, no_patch_required):
     max_version = TARGET_COMPATIBILITY.get(target)
 
     if no_patch_required:
-        # 使用 Python 3.7 打包时，最高支持到 Windows Server 2008 R2
-        # When packaging with Python 3.7, the maximum supported target is Windows Server 2008 R2
+        # 使用 Python 3.7 打包时，最高支持到 Windows Server 2008 R2 / When packaging with Python 3.7, the maximum supported target is Windows Server 2008 R2
         print(t("no_patch_required_mode"))
         print(t("no_patch_required_note"))
         return
 
     if max_version is None:
-        # modern 目标不做强制限制，但友好提示老系统兼容性问题
-        # No hard limit for the modern target, but warn about compatibility with older systems
+        # modern 目标不做强制限制，但友好提示老系统兼容性问题 / No hard limit for the modern target, but warn about compatibility with older systems
         if (major, minor) >= (3, 9):
             print(t("current_python").format(major, minor))
             print(t("python39_compat_warning"))
             print(t("use_older_python_warning"))
         return
 
-    # 老系统目标：强制校验 Python 主/次版本
-    # Older system targets: enforce Python major/minor version validation
+    # 老系统目标：强制校验 Python 主/次版本 / Older system targets: enforce Python major/minor version validation
     if (major, minor) > max_version:
         print(t("python_version_error").format(
             target, max_version[0], max_version[1], major, minor))
@@ -316,8 +311,7 @@ def setup_py37_runtime(cache_dir):
     wheels_dir = os.path.join(cache_dir, "wheels")
     pth_file = os.path.join(py37_dir, "python37._pth")
 
-    # 1. 下载并解压 Python 3.7 嵌入式运行时
-    # 1. Download and extract the Python 3.7 embedded runtime
+    # 1. 下载并解压 Python 3.7 嵌入式运行时 / 1. Download and extract the Python 3.7 embedded runtime
     if not os.path.exists(python_exe):
         zip_path = os.path.join(cache_dir, PY37_EMBED_ZIP)
         if not os.path.exists(zip_path):
@@ -330,8 +324,7 @@ def setup_py37_runtime(cache_dir):
         with zipfile.ZipFile(zip_path, "r") as z:
             z.extractall(py37_dir)
 
-        # 启用 site-packages 支持
-        # Enable site-packages support
+        # 启用 site-packages 支持 / Enable site-packages support
         if os.path.exists(pth_file):
             with open(pth_file, "r", encoding="utf-8") as f:
                 content = f.read()
@@ -339,18 +332,15 @@ def setup_py37_runtime(cache_dir):
             with open(pth_file, "w", encoding="utf-8") as f:
                 f.write(content)
 
-    # 2. 下载 get-pip.py
-    # 2. Download get-pip.py
+    # 2. 下载 get-pip.py / 2. Download get-pip.py
     if not os.path.exists(get_pip_path):
         download_file(PY37_GET_PIP_URL, get_pip_path, "get-pip.py")
 
-    # 3. 下载依赖 wheel
-    # 3. Download dependency wheels
+    # 3. 下载依赖 wheel / 3. Download dependency wheels
     if not os.path.exists(wheels_dir) or not glob.glob(os.path.join(wheels_dir, "pyinstaller-*.whl")):
         download_wheels(cache_dir)
 
-    # 4. 安装 pip（如果尚未安装）
-    # 4. Install pip (if not already installed)
+    # 4. 安装 pip（如果尚未安装） / 4. Install pip (if not already installed)
     try:
         subprocess.run([python_exe, "-m", "pip", "--version"], check=True,
                        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -365,8 +355,7 @@ def setup_py37_runtime(cache_dir):
             print(t("pip_install_failed"))
             sys.exit(1)
 
-    # 5. 安装 PyInstaller
-    # 5. Install PyInstaller
+    # 5. 安装 PyInstaller / 5. Install PyInstaller
     try:
         subprocess.run([python_exe, "-m", "PyInstaller", "--version"], check=True,
                        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -390,8 +379,7 @@ def parse_args():
 
     Parse command-line arguments.
     """
-    # 先解析 --lang，使 argparse 帮助信息使用正确语言
-    # Parse --lang first so argparse help text uses the correct language
+    # 先解析 --lang，使 argparse 帮助信息使用正确语言 / Parse --lang first so argparse help text uses the correct language
     pre_parser = argparse.ArgumentParser(add_help=False)
     pre_parser.add_argument(
         "--lang",
@@ -457,8 +445,7 @@ def create_auxiliary_scripts(dist_dir):
 
     Create startup, background-run, and compatibility-check scripts.
     """
-    # 启动脚本
-    # Startup script
+    # 启动脚本 / Startup script
     bat_path = os.path.join(dist_dir, "start.bat")
     with open(bat_path, "w", encoding="utf-8") as f:
         f.write("@echo off\n")
@@ -466,16 +453,14 @@ def create_auxiliary_scripts(dist_dir):
         f.write("inspection-agent.exe --port 5000\n")
         f.write("pause\n")
 
-    # 后台运行脚本
-    # Background-run script
+    # 后台运行脚本 / Background-run script
     vbs_path = os.path.join(dist_dir, "start_hidden.vbs")
     with open(vbs_path, "w", encoding="utf-8") as f:
         f.write('Set WshShell = CreateObject("WScript.Shell")\n')
         f.write('WshShell.Run "inspection-agent.exe --port 5000", 0, False\n')
         f.write('Set WshShell = Nothing\n')
 
-    # 部署前系统兼容性检查脚本
-    # Pre-deployment system compatibility check script
+    # 部署前系统兼容性检查脚本 / Pre-deployment system compatibility check script
     ps_path = os.path.join(dist_dir, "check_prereqs.ps1")
     with open(ps_path, "w", encoding="utf-8") as f:
         f.write('# 检查 Inspection Agent 运行环境\n')
@@ -517,8 +502,7 @@ def clean_build(server_dir):
 def main():
     args = parse_args()
 
-    # 切换到项目根目录
-    # Switch to the project root directory
+    # 切换到项目根目录 / Switch to the project root directory
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     os.chdir(root)
     server_dir = os.path.join(root, "server")

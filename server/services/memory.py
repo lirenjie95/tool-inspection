@@ -102,14 +102,12 @@ def _collect_linux(lang: str = DEFAULT_LANG):
             ["free", "-m"],
             text=True,
         ).strip().splitlines()
-        # 第二行是内存信息
-        # The second line is memory information
+        # 第二行是内存信息 / The second line is memory information
         if len(output) < 2:
             return {"total_mb": 0, "free_mb": 0, "used_percent": 0}
 
         parts = output[1].split()
-        # 格式: total used free shared buff/cache available
-        # Format: total used free shared buff/cache available
+        # 格式: total used free shared buff/cache available / Format: total used free shared buff/cache available
         if len(parts) < 4:
             return {"total_mb": 0, "free_mb": 0, "used_percent": 0}
 

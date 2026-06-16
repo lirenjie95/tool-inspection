@@ -139,8 +139,8 @@ jobs:
         env:
           PYTHONIOENCODING: utf-8
         run: |
-          # 使用 --no-patch-required 模式，确保生成的 exe 在未安装 KB3063858/KB2533623 补丁的
-          # Windows Server 2008 R2 / Win7 上也能直接运行
+          # Use --no-patch-required mode so the generated exe can run directly on
+          # Windows Server 2008 R2 / Win7 without KB3063858/KB2533623 patches.
           python scripts/build_windows.py --no-patch-required
           $dist = "server/dist/inspection-agent"
           $winDist = "server/dist/inspection-agent-windows"
@@ -241,10 +241,15 @@ jobs:
           name: windows-client-build
           path: ./artifacts
 
+      - name: Generate bilingual release notes
+        run: python3 scripts/generate_release_notes.py > release-notes.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           files: ./artifacts/*
-          generate_release_notes: true
+          body_path: release-notes.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

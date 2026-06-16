@@ -11,8 +11,7 @@ import os
 import unittest
 from unittest.mock import patch, MagicMock
 
-# 将 server 目录加入路径
-# Add the server directory to the path
+# 将 server 目录加入路径 / Add the server directory to the path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "server"))
 
 from services.disk import collect as collect_disk
@@ -131,8 +130,7 @@ class TestCPUService(unittest.TestCase):
         with patch("platform.system", return_value="Linux"):
             with patch("time.sleep"):
                 with patch("builtins.open") as mock_open:
-                    # 模拟两次 /proc/stat 读取
-                    # Simulate two /proc/stat reads
+                    # 模拟两次 /proc/stat 读取 / Simulate two /proc/stat reads
                     mock_open.return_value.__enter__.side_effect = [
                         MagicMock(readline=MagicMock(return_value="cpu  100 0 0 100 0 0 0 0 0 0")),
                         MagicMock(readline=MagicMock(return_value="cpu  200 0 0 150 0 0 0 0 0 0")),
@@ -224,8 +222,7 @@ class TestHealthHandler(unittest.TestCase):
         import threading
         import socket
 
-        # 找一个可用端口
-        # Find an available port
+        # 找一个可用端口 / Find an available port
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.bind(("127.0.0.1", 0))
         self.port = sock.getsockname()[1]
@@ -377,13 +374,11 @@ class TestRunServer(unittest.TestCase):
         sock.close()
 
         server = HTTPServer(("127.0.0.1", port), HealthHandler)
-        # 在线程中启动，然后触发 shutdown
-        # Start in a thread, then trigger shutdown
+        # 在线程中启动，然后触发 shutdown / Start in a thread, then trigger shutdown
         thread = threading.Thread(target=server.serve_forever, daemon=True)
         thread.start()
         time.sleep(0.1)
-        # 确认服务器在运行
-        # Confirm the server is running
+        # 确认服务器在运行 / Confirm the server is running
         import urllib.request
         req = urllib.request.Request(f"http://127.0.0.1:{port}/health")
         with patch("agent.collect_disk", return_value=[]):

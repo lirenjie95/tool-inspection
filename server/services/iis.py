@@ -35,10 +35,8 @@ def collect(lang: str = DEFAULT_LANG):
         dict: 包含 service_status, sites 等字段
         dict: Contains fields such as service_status and sites.
     """
-    # TODO: 实现具体采集逻辑
-    # TODO: implement specific collection logic
-    # Windows 本地可通过 PowerShell 检查:
-    # You can check locally on Windows via PowerShell:
+    # TODO: 实现具体采集逻辑 / TODO: implement specific collection logic
+    # Windows 本地可通过 PowerShell 检查 / You can check locally on Windows via PowerShell:
     #   Get-Service W3SVC
     #   Import-Module WebAdministration; Get-Website
     return {

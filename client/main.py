@@ -239,8 +239,7 @@ def inspect_server(
 
     if data.get("_http_ok") and data.get("status") == "running":
         disks = data.get("disks", [])
-        # 磁盘采集失败时返回的是 {"error": ..., "traceback": ...} 字典
-        # When disk collection fails, an {"error": ..., "traceback": ...} dict is returned
+        # 磁盘采集失败时返回的是 {"error": ..., "traceback": ...} 字典 / When disk collection fails, an {"error": ..., "traceback": ...} dict is returned
         if not isinstance(disks, list):
             error = disks.get("error", t("agent_error", lang)) if isinstance(disks, dict) else str(disks)
             lines.append(f"{name} ({srv['ip']}) {t('web_status_prefix', lang)}: {t('disk_collect_failed', lang, error=error)}")
@@ -393,8 +392,7 @@ def main(argv=None):
 
     config = load_config(args.config)
 
-    # 语言优先级：命令行 > 配置文件 > 默认中文
-    # Language priority: CLI > config file > default Chinese
+    # 语言优先级：命令行 > 配置文件 > 默认中文 / Language priority: CLI > config file > default Chinese
     lang = args.lang or getattr(config, "LANGUAGE", DEFAULT_LANG) or DEFAULT_LANG
 
     output_text, structured = run_inspection(
