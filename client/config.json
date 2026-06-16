@@ -1,4 +1,5 @@
 {
+  "LANGUAGE": "zh",
   "SERVERS": [
     {
       "role": "app",

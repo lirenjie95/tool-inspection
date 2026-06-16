@@ -125,6 +125,7 @@ New-NetFirewallRule -DisplayName "InspectionAgent" -Direction Inbound -Protocol 
 2. 编辑 `client/config.json`，填入各服务器的 Agent 地址：
    ```json
    {
+     "LANGUAGE": "zh",
      "SERVERS": [
        {"role": "app", "ip": "192.168.1.10", "port": 5000, "name": "应用服务器-01"},
        {"role": "db",  "ip": "192.168.1.20", "port": 5000, "name": "数据库服务器-01"}
@@ -139,7 +140,8 @@ New-NetFirewallRule -DisplayName "InspectionAgent" -Direction Inbound -Protocol 
    }
    ```
 
-   > 说明：`DISK_THRESHOLD_GB` 按单台服务器的**总剩余磁盘空间**判断。例如上例中
+   > 说明：`LANGUAGE` 默认为 `"zh"`（中文），设置为 `"en"` 可输出英文巡检报告。
+   > `DISK_THRESHOLD_GB` 按单台服务器的**总剩余磁盘空间**判断。例如上例中
    > 默认阈值 30GB 表示该服务器所有磁盘剩余空间之和需 ≥30GB；数据库角色同样要求
    > 总剩余空间 ≥30GB。如需为数据库角色设置更高阈值，可调整 `ROLE_DISK_THRESHOLDS_GB.db`。
 
@@ -159,6 +161,9 @@ python main.py --output report.json
 # 支持 .json 与 .py 两种格式
 python main.py --config config_prod.json
 python main.py --config config_prod.py
+
+# 输出英文报告（覆盖配置文件中的 LANGUAGE）
+python main.py --lang en
 ```
 
 ### 输出示例
@@ -327,6 +332,24 @@ python -m coverage report --include="server/*,client/*" -m
 
 > 提示：`tests/test_server.py` 中的 HTTP Handler 测试会启动真实 HTTP 服务，
 > 使用临时端口，无需手动启动 Agent。
+
+## 输出语言
+
+本项目所有命令行工具默认输出**中文**，同时支持切换到**英文**。
+
+- **客户端巡检报告**
+  - 在 `client/config.json` 中设置 `"LANGUAGE": "en"`，或
+  - 使用 `python main.py --lang en`
+
+- **Agent 启动日志**
+  - `python agent.py --port 5000 --lang en`
+
+- **Windows 打包脚本**
+  - `python scripts/build_windows.py --lang en`
+  - `python scripts/build_client_windows.py --lang en`
+
+- **Linux 打包脚本**
+  - `OUTPUT_LANG=en bash scripts/build_linux.sh`
 
 ## 故障排查
 

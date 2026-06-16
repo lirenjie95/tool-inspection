@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""CPU 使用率信息采集服务"""
+"""CPU 使用率信息采集服务
+
+CPU usage information collection service.
+"""
 
 import json
 import platform
@@ -11,8 +14,11 @@ def collect():
     """
     采集 CPU 使用率。
 
+    Collect CPU usage.
+
     Returns:
         dict: 包含 usage_percent（总体使用率）
+        dict: Contains usage_percent (overall usage).
     """
     os_type = platform.system()
     if os_type == "Windows":
@@ -22,7 +28,10 @@ def collect():
 
 
 def _collect_windows():
-    """Windows: 通过 PowerShell 获取 CPU 平均使用率"""
+    """Windows: 通过 PowerShell 获取 CPU 平均使用率。
+
+    Windows: get average CPU usage via PowerShell.
+    """
     ps_cmd = (
         "$cpus = Get-WmiObject Win32_Processor | Select-Object LoadPercentage; "
         "$cpus | Select-Object -ExpandProperty LoadPercentage | ConvertTo-Json"
@@ -53,7 +62,10 @@ def _collect_windows():
 
 
 def _collect_linux():
-    """Linux: 通过 /proc/stat 计算 CPU 使用率"""
+    """Linux: 通过 /proc/stat 计算 CPU 使用率。
+
+    Linux: calculate CPU usage via /proc/stat.
+    """
     try:
         with open("/proc/stat", "r") as f:
             line1 = f.readline().strip()

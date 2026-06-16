@@ -185,6 +185,14 @@ A: 请检查打包时使用的 Python 版本。WS2008 非 R2 最高支持 Python
    也可显式指定目标：`--target ws2008r2`（默认）、`--target ws2008`、`--target modern`。
    如无法安装补丁且必须部署到老系统，请使用 `--no-patch-required`。
 
+## 输出语言
+
+所有打包脚本默认输出中文，同时支持英文。
+
+- **服务器 Windows 打包**：`python scripts/build_windows.py --lang en`
+- **客户端 Windows 打包**：`python scripts/build_client_windows.py --lang en`
+- **Linux 打包**：`OUTPUT_LANG=en bash scripts/build_linux.sh`
+
 **Q: 能否打包成单文件（--onefile）？**
 A: 可以，但 `--onedir` 模式启动更快、兼容性更好，尤其适合老系统。如需单文件，
    修改脚本中的 `--onedir` 为 `--onefile` 即可。

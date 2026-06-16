@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Server 端单元测试"""
+"""Server 端单元测试
+
+Server-side unit tests.
+"""
 
 import json
 import sys
@@ -9,6 +12,7 @@ import unittest
 from unittest.mock import patch, MagicMock
 
 # 将 server 目录加入路径
+# Add the server directory to the path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "server"))
 
 from services.disk import collect as collect_disk
@@ -19,10 +23,16 @@ from agent import HealthHandler, get_health_data, run_server
 
 
 class TestDiskService(unittest.TestCase):
-    """测试磁盘采集服务"""
+    """测试磁盘采集服务
+
+    Tests for the disk collection service.
+    """
 
     def test_collect_linux(self):
-        """测试 Linux 磁盘采集返回 list 结构"""
+        """测试 Linux 磁盘采集返回 list 结构
+
+        Test Linux disk collection returns a list structure.
+        """
         df_output = (
             "Filesystem 1G-blocks Used Available Use% Mounted on\n"
             "/dev/disk1 100G 30G 70G 30% /\n"
@@ -39,7 +49,10 @@ class TestDiskService(unittest.TestCase):
                     self.assertIn("/data", device_ids)
 
     def test_collect_linux_skip_pseudo_fs(self):
-        """测试 Linux 过滤伪文件系统"""
+        """测试 Linux 过滤伪文件系统
+
+        Test Linux filters out pseudo filesystems.
+        """
         df_output = (
             "Filesystem 1G-blocks Used Available Use% Mounted on\n"
             "/dev/disk1 100G 30G 70G 30% /\n"
@@ -55,7 +68,10 @@ class TestDiskService(unittest.TestCase):
                     self.assertEqual(result[0]["DeviceID"], "/")
 
     def test_collect_linux_fallback(self):
-        """测试 Linux 无可用挂载点时返回占位数据"""
+        """测试 Linux 无可用挂载点时返回占位数据
+
+        Test Linux returns placeholder data when no usable mount points exist.
+        """
         with patch("platform.system", return_value="Linux"):
             with patch("subprocess.check_output", side_effect=Exception("fail")):
                 result = collect_disk()
@@ -63,7 +79,10 @@ class TestDiskService(unittest.TestCase):
                 self.assertEqual(result[0]["DeviceID"], "/")
 
     def test_collect_windows_structure(self):
-        """测试 Windows 磁盘采集结构（mock PowerShell 返回）"""
+        """测试 Windows 磁盘采集结构（mock PowerShell 返回）
+
+        Test Windows disk collection structure (mock PowerShell output).
+        """
         mock_json = json.dumps([
             {"DeviceID": "C:", "FreeSpaceGB": 45, "SizeGB": 100},
             {"DeviceID": "D:", "FreeSpaceGB": 120, "SizeGB": 200}
@@ -77,7 +96,10 @@ class TestDiskService(unittest.TestCase):
                 self.assertEqual(result[0]["DeviceID"], "C:")
 
     def test_collect_windows_single_disk(self):
-        """测试 Windows 单条磁盘记录返回 dict 时也能转为 list"""
+        """测试 Windows 单条磁盘记录返回 dict 时也能转为 list
+
+        Test Windows single disk record returning dict can also be converted to list.
+        """
         mock_json = json.dumps({"DeviceID": "C:", "FreeSpaceGB": 45, "SizeGB": 100})
         with patch("platform.system", return_value="Windows"):
             with patch("subprocess.run") as mock_run:
@@ -87,7 +109,10 @@ class TestDiskService(unittest.TestCase):
                 self.assertEqual(len(result), 1)
 
     def test_collect_windows_powershell_error(self):
-        """测试 Windows PowerShell 执行失败时抛出异常"""
+        """测试 Windows PowerShell 执行失败时抛出异常
+
+        Test that an exception is raised when Windows PowerShell execution fails.
+        """
         with patch("platform.system", return_value="Windows"):
             with patch("subprocess.run") as mock_run:
                 mock_run.return_value = MagicMock(returncode=1, stdout="", stderr="PowerShell error")
@@ -96,14 +121,21 @@ class TestDiskService(unittest.TestCase):
 
 
 class TestCPUService(unittest.TestCase):
-    """测试 CPU 采集服务"""
+    """测试 CPU 采集服务
+
+    Tests for the CPU collection service.
+    """
 
     def test_collect_linux_returns_dict(self):
-        """测试 Linux CPU 采集返回字典"""
+        """测试 Linux CPU 采集返回字典
+
+        Test Linux CPU collection returns a dict.
+        """
         with patch("platform.system", return_value="Linux"):
             with patch("time.sleep"):
                 with patch("builtins.open") as mock_open:
                     # 模拟两次 /proc/stat 读取
+                    # Simulate two /proc/stat reads
                     mock_open.return_value.__enter__.side_effect = [
                         MagicMock(readline=MagicMock(return_value="cpu  100 0 0 100 0 0 0 0 0 0")),
                         MagicMock(readline=MagicMock(return_value="cpu  200 0 0 150 0 0 0 0 0 0")),
@@ -113,7 +145,10 @@ class TestCPUService(unittest.TestCase):
                     self.assertIn("usage_percent", result)
 
     def test_collect_windows_returns_dict(self):
-        """测试 Windows CPU 采集返回字典"""
+        """测试 Windows CPU 采集返回字典
+
+        Test Windows CPU collection returns a dict.
+        """
         mock_json = json.dumps([20, 30])
         with patch("platform.system", return_value="Windows"):
             with patch("subprocess.run") as mock_run:
@@ -125,10 +160,16 @@ class TestCPUService(unittest.TestCase):
 
 
 class TestMemoryService(unittest.TestCase):
-    """测试内存采集服务"""
+    """测试内存采集服务
+
+    Tests for the memory collection service.
+    """
 
     def test_collect_linux_returns_dict(self):
-        """测试 Linux 内存采集返回字典"""
+        """测试 Linux 内存采集返回字典
+
+        Test Linux memory collection returns a dict.
+        """
         with patch("platform.system", return_value="Linux"):
             with patch("subprocess.check_output", return_value="              total        used        free      shared  buff/cache   available\nMem:          8192        4096        2048         256        2048        3584"):
                 result = collect_memory()
@@ -139,7 +180,10 @@ class TestMemoryService(unittest.TestCase):
                 self.assertEqual(result["total_mb"], 8192)
 
     def test_collect_windows_returns_dict(self):
-        """测试 Windows 内存采集返回字典"""
+        """测试 Windows 内存采集返回字典
+
+        Test Windows memory collection returns a dict.
+        """
         mock_json = json.dumps({"TotalVisibleMemorySize": 8388608, "FreePhysicalMemory": 4194304})
         with patch("platform.system", return_value="Windows"):
             with patch("subprocess.run") as mock_run:
@@ -152,10 +196,16 @@ class TestMemoryService(unittest.TestCase):
 
 
 class TestIISService(unittest.TestCase):
-    """测试 IIS 采集服务"""
+    """测试 IIS 采集服务
+
+    Tests for the IIS collection service.
+    """
 
     def test_collect_returns_dict(self):
-        """测试 collect 返回字典结构"""
+        """测试 collect 返回字典结构
+
+        Test collect returns a dict structure.
+        """
         result = collect_iis()
         self.assertIsInstance(result, dict)
         self.assertIn("service_status", result)
@@ -163,15 +213,22 @@ class TestIISService(unittest.TestCase):
 
 
 class TestHealthHandler(unittest.TestCase):
-    """测试 HTTP Handler（通过真实服务器）"""
+    """测试 HTTP Handler（通过真实服务器）
+
+    Tests for the HTTP handler (via a real server).
+    """
 
     def setUp(self):
-        """启动真实 HTTP 服务器用于测试"""
+        """启动真实 HTTP 服务器用于测试
+
+        Start a real HTTP server for testing.
+        """
         from http.server import HTTPServer
         import threading
         import socket
 
         # 找一个可用端口
+        # Find an available port
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.bind(("127.0.0.1", 0))
         self.port = sock.getsockname()[1]
@@ -182,12 +239,18 @@ class TestHealthHandler(unittest.TestCase):
         self.thread.start()
 
     def tearDown(self):
-        """关闭服务器"""
+        """关闭服务器
+
+        Shut down the server.
+        """
         self.server.shutdown()
         self.server.server_close()
 
     def test_get_health_returns_json(self):
-        """测试 /health 返回 JSON 数据"""
+        """测试 /health 返回 JSON 数据
+
+        Test /health returns JSON data.
+        """
         import urllib.request
         with patch("agent.collect_disk", return_value=[{"DeviceID": "/", "FreeSpaceGB": 10, "SizeGB": 100}]):
             with patch("agent.collect_cpu", return_value={"usage_percent": 10}):
@@ -203,7 +266,10 @@ class TestHealthHandler(unittest.TestCase):
                         self.assertIn("memory", body)
 
     def test_ping_returns_ok(self):
-        """测试 /ping 返回存活状态"""
+        """测试 /ping 返回存活状态
+
+        Test /ping returns alive status.
+        """
         import urllib.request
         req = urllib.request.Request(f"http://127.0.0.1:{self.port}/ping")
         with urllib.request.urlopen(req, timeout=5) as resp:
@@ -212,7 +278,10 @@ class TestHealthHandler(unittest.TestCase):
             self.assertEqual(body["status"], "ok")
 
     def test_not_found(self):
-        """测试未知路径返回 404"""
+        """测试未知路径返回 404
+
+        Test unknown path returns 404.
+        """
         import urllib.request
         import urllib.error
         req = urllib.request.Request(f"http://127.0.0.1:{self.port}/unknown")
@@ -224,10 +293,16 @@ class TestHealthHandler(unittest.TestCase):
 
 
 class TestGetHealthData(unittest.TestCase):
-    """测试 get_health_data 组装函数"""
+    """测试 get_health_data 组装函数
+
+    Tests for the get_health_data assembly function.
+    """
 
     def test_returns_expected_keys(self):
-        """测试返回数据包含预期字段"""
+        """测试返回数据包含预期字段
+
+        Test returned data contains the expected keys.
+        """
         with patch("agent.collect_disk", return_value=[]):
             with patch("agent.collect_cpu", return_value={"usage_percent": 10}):
                 with patch("agent.collect_memory", return_value={"total_mb": 8192, "free_mb": 4096, "used_percent": 50}):
@@ -240,7 +315,10 @@ class TestGetHealthData(unittest.TestCase):
                     self.assertEqual(data["status"], "running")
 
     def test_collect_disk_exception_isolated(self):
-        """测试 collect_disk 抛出异常时被 _safe_collect 隔离，不导致整体失败"""
+        """测试 collect_disk 抛出异常时被 _safe_collect 隔离，不导致整体失败
+
+        Test that collect_disk exceptions are isolated by _safe_collect and do not cause overall failure.
+        """
         with patch("agent.collect_disk", side_effect=RuntimeError("disk error")):
             data = get_health_data()
             self.assertEqual(data["status"], "running")
@@ -248,7 +326,10 @@ class TestGetHealthData(unittest.TestCase):
             self.assertIn("disk error", data["disks"]["error"])
 
     def test_get_health_data_exception_returns_500(self):
-        """测试 get_health_data 整体异常时返回 500"""
+        """测试 get_health_data 整体异常时返回 500
+
+        Test that a get_health_data overall exception returns 500.
+        """
         with patch("agent.get_health_data", side_effect=RuntimeError("unexpected")):
             from http.server import HTTPServer
             import threading
@@ -278,10 +359,16 @@ class TestGetHealthData(unittest.TestCase):
 
 
 class TestRunServer(unittest.TestCase):
-    """测试 run_server 函数"""
+    """测试 run_server 函数
+
+    Tests for the run_server function.
+    """
 
     def test_run_and_shutdown(self):
-        """测试服务器启动和正常关闭"""
+        """测试服务器启动和正常关闭
+
+        Test server startup and normal shutdown.
+        """
         from http.server import HTTPServer
         import threading
         import time
@@ -294,10 +381,12 @@ class TestRunServer(unittest.TestCase):
 
         server = HTTPServer(("127.0.0.1", port), HealthHandler)
         # 在线程中启动，然后触发 shutdown
+        # Start in a thread, then trigger shutdown
         thread = threading.Thread(target=server.serve_forever, daemon=True)
         thread.start()
         time.sleep(0.1)
         # 确认服务器在运行
+        # Confirm the server is running
         import urllib.request
         req = urllib.request.Request(f"http://127.0.0.1:{port}/health")
         with patch("agent.collect_disk", return_value=[]):
@@ -309,7 +398,10 @@ class TestRunServer(unittest.TestCase):
         server.server_close()
 
     def test_keyboard_interrupt(self):
-        """测试 KeyboardInterrupt 正确触发 shutdown"""
+        """测试 KeyboardInterrupt 正确触发 shutdown
+
+        Test KeyboardInterrupt correctly triggers shutdown.
+        """
         with patch("agent.HTTPServer") as mock_httpserver:
             mock_server = MagicMock()
             mock_httpserver.return_value = mock_server
