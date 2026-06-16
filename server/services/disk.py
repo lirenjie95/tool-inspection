@@ -56,14 +56,13 @@ def _collect_windows(lang: str = DEFAULT_LANG):
     """Windows: 通过 PowerShell 获取所有本地磁盘信息。
 
     Windows: get information for all local disks via PowerShell.
+    兼容 PowerShell 2.0（不使用 ConvertTo-Json）
+    Compatible with PowerShell 2.0 (does not use ConvertTo-Json).
     """
     ps_cmd = (
         "Get-WmiObject Win32_LogicalDisk | "
         "Where-Object { $_.DriveType -eq 3 } | "
-        "Select-Object DeviceID, "
-        "@{n='FreeSpaceGB';e={[math]::Round($_.FreeSpace/1GB,0)}}, "
-        "@{n='SizeGB';e={[math]::Round($_.Size/1GB,0)}} | "
-        "ConvertTo-Json"
+        "ForEach-Object { \"$($_.DeviceID),$([math]::Round($_.FreeSpace/1GB,0)),$([math]::Round($_.Size/1GB,0))\" }"
     )
     result = subprocess.run(
         ["powershell", "-Command", ps_cmd],
@@ -73,11 +72,22 @@ def _collect_windows(lang: str = DEFAULT_LANG):
     if result.returncode != 0:
         raise RuntimeError(t("powershell_failed", lang, error=result.stderr))
 
-    data = json.loads(result.stdout)
-    # PowerShell 单条记录返回 dict，多条返回 list，统一为 list
-    # PowerShell returns a dict for a single record and a list for multiple records; normalize to list
-    if isinstance(data, dict):
-        data = [data]
+    data = []
+    for line in result.stdout.strip().splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        parts = line.split(",")
+        if len(parts) < 3:
+            continue
+        try:
+            data.append({
+                "DeviceID": parts[0].strip(),
+                "FreeSpaceGB": int(parts[1].strip()),
+                "SizeGB": int(parts[2].strip()),
+            })
+        except ValueError:
+            continue
     return data
 
 

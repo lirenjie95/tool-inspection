@@ -56,11 +56,12 @@ def _collect_windows(lang: str = DEFAULT_LANG):
     """Windows: 通过 PowerShell 获取内存信息。
 
     Windows: get memory information via PowerShell.
+    兼容 PowerShell 2.0（不使用 ConvertTo-Json）
+    Compatible with PowerShell 2.0 (does not use ConvertTo-Json).
     """
     ps_cmd = (
-        "Get-WmiObject Win32_OperatingSystem | "
-        "Select-Object TotalVisibleMemorySize, FreePhysicalMemory | "
-        "ConvertTo-Json"
+        "$os = Get-WmiObject Win32_OperatingSystem; "
+        "\"$($os.TotalVisibleMemorySize),$($os.FreePhysicalMemory)\""
     )
     result = subprocess.run(
         ["powershell", "-Command", ps_cmd],
@@ -70,9 +71,15 @@ def _collect_windows(lang: str = DEFAULT_LANG):
     if result.returncode != 0:
         raise RuntimeError(t("powershell_failed", lang, error=result.stderr))
 
-    data = json.loads(result.stdout)
-    total_kb = data.get("TotalVisibleMemorySize", 0)
-    free_kb = data.get("FreePhysicalMemory", 0)
+    parts = result.stdout.strip().split(",")
+    if len(parts) < 2:
+        return {"total_mb": 0, "free_mb": 0, "used_percent": 0}
+
+    try:
+        total_kb = int(parts[0].strip())
+        free_kb = int(parts[1].strip())
+    except ValueError:
+        return {"total_mb": 0, "free_mb": 0, "used_percent": 0}
 
     total_mb = round(total_kb / 1024, 0)
     free_mb = round(free_kb / 1024, 0)

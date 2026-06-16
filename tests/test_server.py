@@ -83,27 +83,24 @@ class TestDiskService(unittest.TestCase):
 
         Test Windows disk collection structure (mock PowerShell output).
         """
-        mock_json = json.dumps([
-            {"DeviceID": "C:", "FreeSpaceGB": 45, "SizeGB": 100},
-            {"DeviceID": "D:", "FreeSpaceGB": 120, "SizeGB": 200}
-        ])
+        mock_output = "C:,45,100\nD:,120,200\n"
         with patch("platform.system", return_value="Windows"):
             with patch("subprocess.run") as mock_run:
-                mock_run.return_value = MagicMock(returncode=0, stdout=mock_json, stderr="")
+                mock_run.return_value = MagicMock(returncode=0, stdout=mock_output, stderr="")
                 result = collect_disk()
                 self.assertIsInstance(result, list)
                 self.assertEqual(len(result), 2)
                 self.assertEqual(result[0]["DeviceID"], "C:")
 
     def test_collect_windows_single_disk(self):
-        """测试 Windows 单条磁盘记录返回 dict 时也能转为 list
+        """测试 Windows 单条磁盘记录返回也能正确解析
 
-        Test Windows single disk record returning dict can also be converted to list.
+        Test Windows single disk record returning can also be parsed correctly.
         """
-        mock_json = json.dumps({"DeviceID": "C:", "FreeSpaceGB": 45, "SizeGB": 100})
+        mock_output = "C:,45,100\n"
         with patch("platform.system", return_value="Windows"):
             with patch("subprocess.run") as mock_run:
-                mock_run.return_value = MagicMock(returncode=0, stdout=mock_json, stderr="")
+                mock_run.return_value = MagicMock(returncode=0, stdout=mock_output, stderr="")
                 result = collect_disk()
                 self.assertIsInstance(result, list)
                 self.assertEqual(len(result), 1)
@@ -149,10 +146,10 @@ class TestCPUService(unittest.TestCase):
 
         Test Windows CPU collection returns a dict.
         """
-        mock_json = json.dumps([20, 30])
+        mock_output = "20\n30\n"
         with patch("platform.system", return_value="Windows"):
             with patch("subprocess.run") as mock_run:
-                mock_run.return_value = MagicMock(returncode=0, stdout=mock_json, stderr="")
+                mock_run.return_value = MagicMock(returncode=0, stdout=mock_output, stderr="")
                 result = collect_cpu()
                 self.assertIsInstance(result, dict)
                 self.assertIn("usage_percent", result)
@@ -184,10 +181,10 @@ class TestMemoryService(unittest.TestCase):
 
         Test Windows memory collection returns a dict.
         """
-        mock_json = json.dumps({"TotalVisibleMemorySize": 8388608, "FreePhysicalMemory": 4194304})
+        mock_output = "8388608,4194304\n"
         with patch("platform.system", return_value="Windows"):
             with patch("subprocess.run") as mock_run:
-                mock_run.return_value = MagicMock(returncode=0, stdout=mock_json, stderr="")
+                mock_run.return_value = MagicMock(returncode=0, stdout=mock_output, stderr="")
                 result = collect_memory()
                 self.assertIsInstance(result, dict)
                 self.assertIn("total_mb", result)

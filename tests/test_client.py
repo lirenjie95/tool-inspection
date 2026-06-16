@@ -399,6 +399,22 @@ class TestInspectServer(unittest.TestCase):
         self.assertTrue(any("[告警] 总磁盘空间低于阈值" in line for line in lines))
         self.assertEqual(len(warnings), 1)
 
+    def test_disk_collection_error(self):
+        """测试磁盘采集失败时客户端不崩溃
+
+        Test client does not crash when disk collection fails.
+        """
+        srv = {"ip": "192.168.1.10", "port": 5000, "name": "app-01", "role": "app"}
+        data = {
+            "_http_ok": True,
+            "status": "running",
+            "disks": {"error": "PowerShell execution failed"},
+        }
+        lines, warnings = inspect_server(srv, data, disk_threshold_gb=30)
+        self.assertTrue(any("磁盘采集失败" in line for line in lines))
+        self.assertEqual(len(warnings), 1)
+        self.assertIn("总磁盘空间不足", warnings[0])
+
     def test_without_name(self):
         """测试没有 name 字段的服务器
 
