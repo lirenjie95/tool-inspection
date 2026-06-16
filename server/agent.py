@@ -41,7 +41,8 @@ from services.disk import collect as collect_disk
 from services.cpu import collect as collect_cpu
 from services.memory import collect as collect_memory
 
-# 如需启用 IIS 检查，取消下一行注释 / To enable IIS checking, uncomment the next line
+# 如需启用 IIS 检查，取消下一行注释
+# To enable IIS checking, uncomment the next line
 # from services.iis import collect as collect_iis
 
 
@@ -90,7 +91,8 @@ def t(key: str, lang: str = None, **kwargs) -> str:
     return text
 
 
-# 配置日志：时间 级别 消息 / Configure logging: timestamp level message
+# 配置日志：时间 级别 消息
+# Configure logging: timestamp level message
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -128,7 +130,8 @@ def get_health_data(lang=None):
         "memory": _safe_collect("memory", collect_memory, lang=lang),
     }
 
-    # 扩展点：新增服务在此加入返回数据 / Extension point: add new services to the returned data here
+    # 扩展点：新增服务在此加入返回数据
+    # Extension point: add new services to the returned data here
     # try:
     #     data["iis"] = _safe_collect("iis", collect_iis)
     # except Exception as e:
@@ -144,7 +147,8 @@ class HealthHandler(BaseHTTPRequestHandler):
     """
 
     def log_message(self, format, *args):
-        # 使用标准日志库输出访问日志，包含客户端 IP / Use the standard logging library to output access logs, including client IP
+        # 使用标准日志库输出访问日志，包含客户端 IP
+        # Use the standard logging library to output access logs, including client IP
         logger.info(f"{self.client_address[0]} - {args[0]}")
 
     def _send_json(self, code, data):
@@ -169,7 +173,8 @@ class HealthHandler(BaseHTTPRequestHandler):
                 logger.error(t("health_request_error", error=e))
                 self._send_error(500, str(e))
         elif self.path == "/ping":
-            # 轻量级存活探测，不执行任何采集 / Lightweight liveness probe; does not perform any collection
+            # 轻量级存活探测，不执行任何采集
+            # Lightweight liveness probe; does not perform any collection
             self._send_json(200, {"status": "ok"})
         else:
             self._send_error(404, "not_found")
@@ -192,7 +197,8 @@ def parse_args():
 
     Parse command-line arguments.
     """
-    # 先解析 --lang，使 argparse 帮助信息使用正确语言 / Parse --lang first so argparse help text uses the correct language
+    # 先解析 --lang，使 argparse 帮助信息使用正确语言
+    # Parse --lang first so argparse help text uses the correct language
     pre_parser = argparse.ArgumentParser(add_help=False)
     pre_parser.add_argument(
         "--lang",

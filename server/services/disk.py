@@ -101,9 +101,11 @@ def _collect_linux(lang: str = DEFAULT_LANG):
     """
     import os
     import subprocess
-    # lang 保留给未来需要本地化 Linux 错误提示时使用 / lang is reserved for future localization of Linux error messages
+    # lang 保留给未来需要本地化 Linux 错误提示时使用
+    # lang is reserved for future localization of Linux error messages
 
-    # 需要忽略的伪文件系统类型 / Pseudo filesystem types to ignore
+    # 需要忽略的伪文件系统类型
+    # Pseudo filesystem types to ignore
     skip_fs_types = {"devtmpfs", "tmpfs", "overlay", "squashfs", "proc", "sysfs", "cgroup"}
     result = []
 
@@ -115,17 +117,20 @@ def _collect_linux(lang: str = DEFAULT_LANG):
     except Exception:
         output = []
 
-    # 第一行是表头，跳过 / The first line is the header; skip it
+    # 第一行是表头，跳过
+    # The first line is the header; skip it
     for line in output[1:]:
         parts = line.split()
-        # 格式: Filesystem 1G-blocks Used Available Use% Mounted on / Format: Filesystem 1G-blocks Used Available Use% Mounted on
+        # 格式: Filesystem 1G-blocks Used Available Use% Mounted on
+        # Format: Filesystem 1G-blocks Used Available Use% Mounted on
         if len(parts) < 6:
             continue
 
         fs_type_or_device = parts[0]
         mount_point = " ".join(parts[5:]) if len(parts) > 6 else parts[5]
 
-        # 跳过伪文件系统和特殊挂载点 / Skip pseudo filesystems and special mount points
+        # 跳过伪文件系统和特殊挂载点
+        # Skip pseudo filesystems and special mount points
         if fs_type_or_device in skip_fs_types:
             continue
         if mount_point.startswith("/dev") or mount_point.startswith("/sys") or mount_point.startswith("/proc"):
@@ -144,7 +149,8 @@ def _collect_linux(lang: str = DEFAULT_LANG):
         except (ValueError, IndexError):
             continue
 
-    # 如果什么都没采集到，至少返回根分区占位 / If nothing was collected, at least return a placeholder for the root partition
+    # 如果什么都没采集到，至少返回根分区占位
+    # If nothing was collected, at least return a placeholder for the root partition
     if not result:
         result.append({"DeviceID": "/", "FreeSpaceGB": 0, "SizeGB": 0})
 

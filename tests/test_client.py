@@ -11,7 +11,8 @@ import unittest
 import tempfile
 from unittest.mock import patch, MagicMock
 
-# 将 client 目录加入路径 / Add the client directory to the path
+# 将 client 目录加入路径
+# Add the client directory to the path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "client"))
 
 from main import (
@@ -170,7 +171,8 @@ class TestCheckWeb(unittest.TestCase):
         self.assertTrue(result["reachable"])
         self.assertEqual(result["code"], 200)
         self.assertEqual(result["status"], "正常打开")
-        # 确认跟随重定向参数已传入 / Confirm the follow-redirects parameter was passed
+        # 确认跟随重定向参数已传入
+        # Confirm the follow-redirects parameter was passed
         mock_get.assert_called_once_with(
             "http://example.com", timeout=20, allow_redirects=True
         )
