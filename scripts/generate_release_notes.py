@@ -65,10 +65,7 @@ def translate_titles(titles: list) -> Optional[list]:
 
     try:
         translator = GoogleTranslator(source="en", target="zh-CN")
-        # Translate in one batch to reduce the chance of hitting rate limits.
-        joined = "\n---TITLE---\n".join(titles)
-        translated = translator.translate(joined)
-        return [t.strip() for t in translated.split("---TITLE---")]
+        return [translator.translate(t).strip() for t in titles]
     except Exception:
         return None
 
