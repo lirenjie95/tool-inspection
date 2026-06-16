@@ -179,7 +179,7 @@ A: This is the typical symptom of Windows Server 2008 R2 / Win7 missing the [KB3
    If **the patch cannot be installed**, repackage using the `--no-patch-required` mode:
    ```bash
    python scripts/build_windows.py --no-patch-required
-```
+   ```
 
 **Q: On Windows Server 2008 it reports not supported / missing api-ms-win-core-path-l1-1-0.dll?**
 A: Check the Python version used for packaging. WS2008 non-R2 supports up to Python 3.7, and WS2008 R2 supports up to Python 3.8.

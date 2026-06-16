@@ -13,15 +13,15 @@ and responds to HTTP queries from the local inspection client.
 
 ```
 server/
-├── agent.py # HTTP service entry point (no modification needed)
-├── services/ # Inspection service extension directory
+├── agent.py              # HTTP service entry point (no modification needed)
+├── services/             # Inspection service extension directory
 │   ├── __init__.py
-│   ├── disk.py # Disk collection (implemented)
-│   ├── cpu.py # CPU collection (implemented)
-│   ├── memory.py # Memory collection (implemented)
-│   └── iis.py # IIS collection (extension example, enable manually)
-├── requirements.txt # Zero third-party dependencies
-└── README.md # This file
+│   ├── disk.py           # Disk collection (implemented)
+│   ├── cpu.py            # CPU collection (implemented)
+│   ├── memory.py         # Memory collection (implemented)
+│   └── iis.py            # IIS collection (extension example, enable manually)
+├── requirements.txt      # Zero third-party dependencies
+└── README.md             # This file
 ```
 
 ## Deployment Requirements
@@ -47,7 +47,7 @@ server/
 2. Open Command Prompt or PowerShell, enter this folder, and run:
    ```cmd
    python agent.py --port 5000
-```
+   ```
 
 #### Option B: Run the Packaged Executable
 
@@ -63,12 +63,12 @@ See the "Packaging and Deployment" section below.
    ```bash
    ssh user@192.168.1.30 "mkdir -p /opt/inspection-agent"
    scp -r server/* user@192.168.1.30:/opt/inspection-agent/
-```
+   ```
 2. Run the Agent:
    ```bash
    cd /opt/inspection-agent
    python3 agent.py --port 5000
-```
+   ```
 
 #### Option B: systemd Background Service (Recommended)
 
@@ -88,13 +88,13 @@ See the "Packaging and Deployment" section below.
 
    [Install]
    WantedBy=multi-user.target
-```
+   ```
 3. Start and enable it to run on boot:
    ```bash
    sudo systemctl daemon-reload
    sudo systemctl enable --now inspection-agent
    sudo systemctl status inspection-agent
-```
+   ```
 
 #### Option C: Package as an ELF Executable
 
@@ -211,7 +211,7 @@ After packaging, `inspection-agent.service` is automatically generated and can b
    # Startup directory: C:\Path\To\inspection-agent\
    # Arguments: agent.py --port 5000
    nssm start InspectionAgent
-```
+   ```
 
 **Option B: Scheduled Task**
 
@@ -260,19 +260,19 @@ To add new inspection items (such as IIS, SQL Server, event logs, etc.; CPU, mem
    def collect():
        # Implement collection logic
        return {"status": "ok", "databases": [...]}
-```
+   ```
 
 2. **Register with the Agent**
 
    Import at the top of `agent.py`:
    ```python
    from services.sqlserver import collect as collect_sqlserver
-```
+   ```
 
    Add to `get_health_data()`:
    ```python
    data["sqlserver"] = _safe_collect("sqlserver", collect_sqlserver)
-```
+   ```
 
    The existing built-in services (disk / cpu / memory) are also called via `_safe_collect`; new services should follow the same pattern.
 

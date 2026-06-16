@@ -11,15 +11,15 @@ Agent 在服务器本地运行一个轻量 HTTP 服务，通过本机 PowerShell
 
 ```
 server/
-├── agent.py # HTTP 服务入口（无需修改）
-├── services/ # 巡检服务扩展目录
+├── agent.py              # HTTP 服务入口（无需修改）
+├── services/             # 巡检服务扩展目录
 │   ├── __init__.py
-│   ├── disk.py # 磁盘采集（已实现）
-│   ├── cpu.py # CPU 采集（已实现）
-│   ├── memory.py # 内存采集（已实现）
-│   └── iis.py # IIS 采集（扩展示例，需手动启用）
-├── requirements.txt # 零第三方依赖
-└── README.md # 本文件
+│   ├── disk.py           # 磁盘采集（已实现）
+│   ├── cpu.py            # CPU 采集（已实现）
+│   ├── memory.py         # 内存采集（已实现）
+│   └── iis.py            # IIS 采集（扩展示例，需手动启用）
+├── requirements.txt      # 零第三方依赖
+└── README.md             # 本文件
 ```
 
 ## 部署要求
@@ -45,7 +45,7 @@ server/
 2. 打开命令提示符或 PowerShell，进入本文件夹：
    ```cmd
    python agent.py --port 5000
-```
+   ```
 
 #### 方式 B：运行打包后的可执行程序
 
@@ -61,12 +61,12 @@ server/
    ```bash
    ssh user@192.168.1.30 "mkdir -p /opt/inspection-agent"
    scp -r server/* user@192.168.1.30:/opt/inspection-agent/
-```
+   ```
 2. 运行 Agent：
    ```bash
    cd /opt/inspection-agent
    python3 agent.py --port 5000
-```
+   ```
 
 #### 方式 B：systemd 后台服务（推荐）
 
@@ -86,13 +86,13 @@ server/
 
    [Install]
    WantedBy=multi-user.target
-```
+   ```
 3. 启动并设置开机自启：
    ```bash
    sudo systemctl daemon-reload
    sudo systemctl enable --now inspection-agent
    sudo systemctl status inspection-agent
-```
+   ```
 
 #### 方式 C：打包成 ELF 可执行程序
 
@@ -209,7 +209,7 @@ bash scripts/build_linux.sh
    # Startup directory: C:\Path\To\inspection-agent\
    # Arguments: agent.py --port 5000
    nssm start InspectionAgent
-```
+   ```
 
 **方式 B：计划任务**
 
@@ -258,19 +258,19 @@ Start-Process python -ArgumentList "agent.py","--port","5000" -WindowStyle Hidde
    def collect():
        # 实现采集逻辑
        return {"status": "ok", "databases": [...]}
-```
+   ```
 
 2. **注册到 Agent**
 
    在 `agent.py` 顶部导入：
    ```python
    from services.sqlserver import collect as collect_sqlserver
-```
+   ```
 
    在 `get_health_data()` 中加入：
    ```python
    data["sqlserver"] = _safe_collect("sqlserver", collect_sqlserver)
-```
+   ```
 
    现有内置服务（disk / cpu / memory）也是通过 `_safe_collect` 调用的，新增服务建议保持同样写法。
 

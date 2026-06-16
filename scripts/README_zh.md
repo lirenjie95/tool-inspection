@@ -177,7 +177,7 @@ A: 这是 Windows Server 2008 R2 / Win7 缺少 [KB3063858](https://support.micro
    如果**无法安装补丁**，请使用 `--no-patch-required` 模式重新打包：
    ```bash
    python scripts/build_windows.py --no-patch-required
-```
+   ```
 
 **Q: Windows Server 2008 上提示不支持 / 缺少 api-ms-win-core-path-l1-1-0.dll？**
 A: 请检查打包时使用的 Python 版本。WS2008 非 R2 最高支持 Python 3.7，WS2008 R2 最高支持 3.8。
