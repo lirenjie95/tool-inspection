@@ -17,8 +17,8 @@
 #     bash scripts/build_linux.sh
 #
 # 输出 / Output:
-#     server/dist/inspection-agent  (单一 ELF 可执行文件)
-#     server/dist/inspection-agent  (single ELF executable)
+#     server/dist/inspection-agent/  (文件夹，根目录仅保留 ELF / start.sh)
+#     server/dist/inspection-agent/  (directory; root keeps only ELF / start.sh)
 
 set -e
 
@@ -57,16 +57,16 @@ cd "$SERVER_DIR"
 rm -rf build dist *.spec
 
 # 打包
-# --onefile 模式默认输出单一 ELF，便于分发
+# --onedir 模式，依赖文件统一放在 _internal/ 子目录
 # Package
-# --onefile mode outputs a single ELF by default for easier distribution
+# --onedir mode, dependencies go to _internal/ subdirectory
 python3 -m PyInstaller \
     --name inspection-agent \
-    --onefile \
+    --onedir \
     --console \
     agent.py
 
-DIST_DIR="$SERVER_DIR/dist"
+DIST_DIR="$SERVER_DIR/dist/inspection-agent"
 
 # 创建启动脚本
 # Create startup script
@@ -78,11 +78,10 @@ cd "$SCRIPT_DIR"
 EOF
 chmod +x "$DIST_DIR/start.sh"
 
-# 创建 systemd service 文件模板
-# 默认使用 /opt/inspection-agent 作为部署路径，可根据实际情况修改
-# Create systemd service file template
-# Defaults to /opt/inspection-agent as the deployment path; modify as needed
-cat > "$DIST_DIR/inspection-agent.service" << 'EOF'
+# 创建 systemd service 文件模板，放入 scripts/ 子目录，保持根目录简洁
+# Create systemd service file template under scripts/ to keep the root clean
+mkdir -p "$DIST_DIR/scripts"
+cat > "$DIST_DIR/scripts/inspection-agent.service" << 'EOF'
 [Unit]
 Description=Inspection Agent
 After=network.target
@@ -100,14 +99,14 @@ EOF
 
 msg "========================================" "========================================"
 msg "打包成功!" "Packaging successful!"
-msg "输出文件: $DIST_DIR/inspection-agent" "Output file: $DIST_DIR/inspection-agent"
+msg "输出目录: $DIST_DIR" "Output directory: $DIST_DIR"
 msg "" ""
 msg "部署方式:" "Deployment instructions:"
-msg "1. 将上述可执行文件复制到目标服务器" "1. Copy the executable to the target server"
+msg "1. 将上述文件夹整体复制到目标服务器" "1. Copy the entire folder to the target server"
 msg "2. 运行方式:" "2. How to run:"
 msg "   - 前台运行: ./start.sh --port 5000" "   - Foreground: ./start.sh --port 5000"
 msg "   - 后台运行(systemd):" "   - Background (systemd):"
-msg "       sudo cp inspection-agent.service /etc/systemd/system/" "       sudo cp inspection-agent.service /etc/systemd/system/"
+msg "       sudo cp scripts/inspection-agent.service /etc/systemd/system/" "       sudo cp scripts/inspection-agent.service /etc/systemd/system/"
 msg "       sudo systemctl daemon-reload" "       sudo systemctl daemon-reload"
 msg "       sudo systemctl enable --now inspection-agent" "       sudo systemctl enable --now inspection-agent"
 msg "========================================" "========================================"

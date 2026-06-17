@@ -31,8 +31,8 @@ Therefore the default packaging environment is Python 3.8.x to avoid generating 
                                                                  # Also works on unpatched Win7/2008 R2
 
 输出 / Output:
-    client/dist/inspection-client.exe  (单一可执行文件)
-    client/dist/inspection-client.exe  (single executable file)
+    client/dist/inspection-client/  (文件夹，根目录仅保留 exe / bat / vbs)
+    client/dist/inspection-client/  (directory; root keeps only exe / bat / vbs)
 """
 
 import argparse
@@ -103,15 +103,15 @@ TRANSLATIONS = {
         "client_deps_failed": "错误: 客户端依赖安装失败",
         "copied_default_config": "已复制默认配置文件: {path}",
         "packaging_successful": "打包成功!",
-        "output_file": "输出文件: {dist_file}",
+        "output_directory": "输出目录: {dist_dir}",
         "deployment_instructions": "部署方式:",
-        "step1_copy_files": "1. 将上述 exe 与 config.json 复制到目标 Windows 管理机",
+        "step1_copy_folder": "1. 将上述文件夹整体复制到目标 Windows 管理机",
         "step2_edit_config": "2. 编辑 config.json，填入实际服务器 Agent 地址",
         "step3_run_methods": "3. 运行方式:",
         "run_foreground": "   - 前台运行: 双击 start.bat",
         "run_json_output": "   - 输出 JSON 报告: 双击 start_json.bat",
         "run_txt_output": "   - 输出文本报告: 双击 start_txt.bat",
-        "run_command_line": "   - 命令行: inspection-client.exe --config config_prod.py",
+        "run_command_line": "   - 命令行: inspection-client.exe --config config_prod.json",
         "no_patch_required_build_note": "\n[提示] 本次使用 --no-patch-required 模式打包",
         "no_patch_required_build_note2": "       生成的 exe 适用于未安装 KB3063858/KB2533623 补丁的老系统",
     },
@@ -160,15 +160,15 @@ TRANSLATIONS = {
         "client_deps_failed": "Error: Client dependency installation failed",
         "copied_default_config": "Copied default config file: {path}",
         "packaging_successful": "Packaging successful!",
-        "output_file": "Output file: {dist_file}",
+        "output_directory": "Output directory: {dist_dir}",
         "deployment_instructions": "Deployment instructions:",
-        "step1_copy_files": "1. Copy the exe and config.json to the target Windows management machine",
+        "step1_copy_folder": "1. Copy the entire folder to the target Windows management machine",
         "step2_edit_config": "2. Edit config.json with actual server Agent addresses",
         "step3_run_methods": "3. How to run:",
         "run_foreground": "   - Foreground: double-click start.bat",
         "run_json_output": "   - Output JSON report: double-click start_json.bat",
         "run_txt_output": "   - Output text report: double-click start_txt.bat",
-        "run_command_line": "   - Command line: inspection-client.exe --config config_prod.py",
+        "run_command_line": "   - Command line: inspection-client.exe --config config_prod.json",
         "no_patch_required_build_note": "\n[NOTE] This build used --no-patch-required mode",
         "no_patch_required_build_note2": "       Generated exe is suitable for old systems without KB3063858/KB2533623 patches",
     },
@@ -287,13 +287,13 @@ def main():
     clean_build(client_dir)
 
     # 打包
-    # --onefile 模式默认输出单一 exe，便于分发
+    # --onedir 模式，依赖文件统一放在 _internal/ 子目录
     # Package
-    # --onefile mode outputs a single exe by default for easier distribution
+    # --onedir mode, dependencies go to _internal/ subdirectory
     cmd = [
         python_exe, "-m", "PyInstaller",
         "--name", "inspection-client",
-        "--onefile",
+        "--onedir",
         "--console",
         "--workpath", os.path.join(client_dir, "build"),
         "--distpath", os.path.join(client_dir, "dist"),
@@ -307,10 +307,10 @@ def main():
         print(t("packaging_failed"))
         sys.exit(1)
 
-    dist_dir = os.path.join(client_dir, "dist")
+    dist_dir = os.path.join(client_dir, "dist", "inspection-client")
 
-    # 复制默认配置文件到输出目录，方便用户直接修改
-    # Copy the default config file to the output directory for easy user modification
+    # 复制默认配置文件到输出目录根，与 exe / bat / vbs 同级
+    # Copy the default config file to the output root, alongside exe / bat / vbs
     shutil.copy2(
         os.path.join(client_dir, "config.json"),
         os.path.join(dist_dir, "config.json"),
@@ -344,13 +344,11 @@ def main():
         f.write("inspection-client.exe --output report.txt\n")
         f.write("pause\n")
 
-    dist_file = os.path.join(dist_dir, "inspection-client.exe")
-
     print("\n" + "=" * 60)
     print(t("packaging_successful"))
-    print(t("output_file", dist_file=dist_file))
+    print(t("output_directory", dist_dir=dist_dir))
     print(t("deployment_instructions"))
-    print(t("step1_copy_files"))
+    print(t("step1_copy_folder"))
     print(t("step2_edit_config"))
     print(t("step3_run_methods"))
     print(t("run_foreground"))

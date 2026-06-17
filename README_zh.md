@@ -90,7 +90,9 @@
    pip install pyinstaller
    python scripts/build_windows.py
    ```
-2. 将 `server/dist/inspection-agent.exe`（以及可选的 `start.bat` / `start_hidden.vbs` 辅助脚本）复制到目标服务器
+2. 将 `server/dist/inspection-agent/` 整个文件夹复制到目标服务器。
+   文件夹根目录只包含 `inspection-agent.exe`、`start.bat`、`start_hidden.vbs`；
+   依赖放在 `_internal/`，部署前检查脚本放在 `scripts/`。
 3. 运行 `inspection-agent.exe --port 5000`，或双击 `start.bat`（前台）/ `start_hidden.vbs`（后台静默）
 
 > 如果当前 Python 版本高于 3.8.x，脚本会报错并提示原因。
@@ -158,9 +160,7 @@ python main.py --output report.txt
 python main.py --output report.json
 
 # 使用自定义配置文件（适合多环境：测试/生产）
-# 支持 .json 与 .py 两种格式
 python main.py --config config_prod.json
-python main.py --config config_prod.py
 
 # 输出英文报告（覆盖配置文件中的 LANGUAGE）
 python main.py --lang en
@@ -210,14 +210,14 @@ pip install pyinstaller
 python scripts/build_client_windows.py
 ```
 
-打包完成后，输出位于 `client/dist/`，包含：
-- `inspection-client.exe` — 客户端主程序（单一可执行文件）
+打包完成后，输出位于 `client/dist/inspection-client/`，包含：
+- `inspection-client.exe` — 客户端主程序
 - `config.json` — 默认配置文件（可直接修改）
 - `start.bat` — 前台运行脚本
 - `start_json.bat` — 运行并输出 JSON 报告
 - `start_txt.bat` — 运行并输出文本报告
 
-部署方式：将 `inspection-client.exe` 与 `config.json`（以及可选的辅助脚本）复制到目标 Windows 管理机，
+部署方式：将 `client/dist/inspection-client/` 整个文件夹复制到目标 Windows 管理 机，
 编辑 `config.json` 后双击 `start.bat` 即可运行。
 
 > 如果当前 Python 版本高于 3.8.x，脚本会报错并说明原因。
@@ -316,7 +316,8 @@ sudo systemctl enable --now inspection-agent
 bash scripts/build_linux.sh
 ```
 
-打包后会生成单一 `inspection-agent` ELF 可执行文件和 systemd service 模板，
+打包后会生成 `server/dist/inspection-agent/` 文件夹，根目录包含 `inspection-agent` ELF 可执行文件
+和 `start.sh`，`scripts/inspection-agent.service` 与 `_internal/` 依赖也放在相应子目录中。
 和 Windows exe 一样无需目标机安装 Python。详见 `scripts/README.md`。
 
 ## 测试
