@@ -68,6 +68,11 @@ python3 -m PyInstaller \
 
 DIST_DIR="$SERVER_DIR/dist/inspection-agent"
 
+# 复制中英文 README 到输出目录
+# Copy Chinese/English READMEs to the output directory
+cp "$ROOT/release/agent-linux/README.md" "$DIST_DIR/README.md"
+cp "$ROOT/release/agent-linux/README_zh.md" "$DIST_DIR/README_zh.md"
+
 # 创建启动脚本
 # Create startup script
 cat > "$DIST_DIR/start.sh" << 'EOF'
