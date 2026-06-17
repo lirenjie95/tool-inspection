@@ -6,9 +6,9 @@
 方便在没有安装 Python 的服务器或管理机上直接运行。
 
 > **CI/CD 自动构建**：本项目配置了 GitHub Actions，在推送 `v*` 标签时会自动构建并发布到 GitHub Release：
-> - `inspection-agent-linux.tar.gz`（Linux ELF + `start.sh` + `inspection-agent.service`）
-> - `inspection-agent-windows.zip`（Windows 单文件 exe + `start.bat` + `start_hidden.vbs` + `check_prereqs.ps1`）
-> - `inspection-client-windows.zip`（Windows 客户端单文件 exe + `config.json` + `start.bat` / `start_json.bat` / `start_txt.bat`）
+> - `inspection-agent-linux.tar.gz`（Linux ELF + `start.sh` + `scripts/inspection-agent.service`）
+> - `inspection-agent-windows.zip`（Windows exe + `start.bat` + `start_hidden.vbs` + `scripts/check_prereqs.ps1`）
+> - `inspection-client-windows.zip`（Windows 客户端 exe + `config.json` + `start.bat` / `start_json.bat` / `start_txt.bat`）
 >
 > 其中 Windows Agent 与 Windows 客户端在 CI 中均默认使用 `--no-patch-required` 模式打包，
 > 因此 Release 包可在未安装 KB3063858/KB2533623 补丁的 Windows Server 2008 R2 / Win7 上直接运行。
@@ -70,21 +70,22 @@ ImportError: DLL load failed while importing _socket: 参数错误。
 
 Python 3.7 不使用该标志，因此生成的 exe 可以在未打补丁的老系统上直接运行。
 
-打包完成后，输出位于 `server/dist/`，包含：
-- `inspection-agent.exe` — 主程序（单一可执行文件）
+打包完成后，输出位于 `server/dist/inspection-agent/`，包含：
+- `inspection-agent.exe` — 主程序
 - `start.bat` — 前台运行脚本
 - `start_hidden.vbs` — 后台静默运行脚本（无黑窗口）
-- `check_prereqs.ps1` — 部署前系统兼容性检查脚本
+- `scripts/check_prereqs.ps1` — 部署前系统兼容性检查脚本
+- `_internal/` — 运行时依赖
 
 > 注意：本地默认打包目标为 `ws2008r2`（要求 Python 3.8.x），而 CI 中的 Release 包使用 `--no-patch-required`。
 > 如需本地也生成兼容未打补丁老系统的包，请显式加上 `--no-patch-required`。
 
 ### 部署
 
-将 `server/dist/inspection-agent.exe`（以及需要的辅助脚本）复制到目标 Windows 服务器，
+将 `server/dist/inspection-agent/` 整个文件夹复制到目标 Windows 服务器，
 然后运行 `inspection-agent.exe --port 5000`，或双击 `start.bat` / `start_hidden.vbs`。
 
-部署前建议在目标服务器运行一次 `check_prereqs.ps1`，快速检查补丁状态。
+部署前建议在目标服务器运行一次 `scripts/check_prereqs.ps1`，快速检查补丁状态。
 
 ---
 
@@ -133,16 +134,17 @@ python scripts/build_client_windows.py --no-patch-required
 该模式复用服务端打包的 Python 3.7 嵌入式运行时（详见[服务器 Windows 打包](#服务器-windows-打包)），
 因此生成的客户端 exe 可在未打补丁的老系统上直接运行。
 
-打包完成后，输出位于 `client/dist/`，包含：
-- `inspection-client.exe` — 客户端主程序（单一可执行文件）
+打包完成后，输出位于 `client/dist/inspection-client/`，包含：
+- `inspection-client.exe` — 客户端主程序
 - `config.json` — 默认配置文件（可直接修改）
 - `start.bat` — 前台运行脚本
 - `start_json.bat` — 运行并输出 JSON 报告
 - `start_txt.bat` — 运行并输出文本报告
+- `_internal/` — 运行时依赖
 
 ### 部署
 
-将 `inspection-client.exe` 与 `config.json`（以及需要的辅助脚本）复制到目标 Windows 管理机，
+将 `client/dist/inspection-client/` 整个文件夹复制到目标 Windows 管理机，
 编辑 `config.json` 填入服务器 Agent 地址后，双击 `start.bat` 即可运行。
 
 ---
@@ -161,10 +163,11 @@ pip install pyinstaller
 bash scripts/build_linux.sh
 ```
 
-打包完成后，输出位于 `server/dist/`，包含：
-- `inspection-agent` — ELF 可执行文件（单一可执行文件，类似 Windows exe）
+打包完成后，输出位于 `server/dist/inspection-agent/`，包含：
+- `inspection-agent` — ELF 可执行文件
 - `start.sh` — 启动脚本
-- `inspection-agent.service` — systemd 服务模板
+- `scripts/inspection-agent.service` — systemd 服务模板
+- `_internal/` — 运行时依赖
 
 ### 部署
 
@@ -178,7 +181,7 @@ cd /opt/inspection-agent
 
 **方式二：systemd 后台服务（推荐）**
 ```bash
-sudo cp inspection-agent.service /etc/systemd/system/
+sudo cp scripts/inspection-agent.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now inspection-agent
 sudo systemctl status inspection-agent
@@ -198,8 +201,7 @@ PyInstaller 打包的 Linux 可执行文件依赖构建时的 glibc 版本，
 ## 常见问题
 
 **Q: 打包后的程序无法运行，提示缺少 DLL/so？**
-A: `--onefile` 模式下可执行文件会在运行时自动解压依赖到临时目录，通常无需手动管理 DLL/so。
-   如果你改回 `--onedir` 模式，请确保复制的是**整个文件夹**而不是单个 exe 文件。
+A: 默认 `--onedir` 模式已把所有依赖放在 `_internal/` 文件夹中，请确保复制的是**整个文件夹**而不是单个 exe 文件。
 
 **Q: 运行时报 `ImportError: DLL load failed while importing _socket: 参数错误`？**
 A: 这是 Windows Server 2008 R2 / Win7 缺少 [KB3063858](https://support.microsoft.com/kb/3063858) 补丁的典型表现。
@@ -226,6 +228,6 @@ A: 请检查打包时使用的 Python 版本。WS2008 非 R2 最高支持 Python
 - **客户端 Windows 打包**：`python scripts/build_client_windows.py --lang en`
 - **Linux 打包**：`OUTPUT_LANG=en bash scripts/build_linux.sh`
 
-**Q: 能否打包成目录（--onedir）？**
-A: 可以，但默认使用 `--onefile` 以方便分发。如需 `--onedir` 模式（启动略快、部分老系统兼容性更好），
-   修改脚本中的 `--onefile` 为 `--onedir` 即可。
+**Q: 能否打包成单文件（--onefile）？**
+A: 可以，但默认使用 `--onedir`（启动更快、兼容性更好）。如需单文件，
+   修改脚本中的 `--onedir` 为 `--onefile` 即可。

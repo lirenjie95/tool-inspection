@@ -227,25 +227,21 @@ class TestLoadConfig(unittest.TestCase):
         Test loading a non-existent config file.
         """
         with self.assertRaises(FileNotFoundError):
-            load_config("nonexistent_config.py")
+            load_config("nonexistent_config.json")
 
-    def test_load_custom_config(self):
-        """测试加载自定义配置文件
+    def test_load_non_json_config(self):
+        """测试加载非 JSON 配置文件时抛出错误
 
-        Test loading a custom config file.
+        Test that loading a non-JSON config file raises an error.
         """
         with tempfile.NamedTemporaryFile(
             mode="w", suffix=".py", delete=False, encoding="utf-8"
         ) as f:
             f.write("SERVERS = []\n")
-            f.write("WEBS = []\n")
-            f.write("DISK_THRESHOLD_GB = 100\n")
             path = f.name
         try:
-            config = load_config(path)
-            self.assertEqual(config.SERVERS, [])
-            self.assertEqual(config.WEBS, [])
-            self.assertEqual(config.DISK_THRESHOLD_GB, 100)
+            with self.assertRaises(ValueError):
+                load_config(path)
         finally:
             os.unlink(path)
 

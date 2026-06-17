@@ -31,8 +31,8 @@ Therefore the default packaging environment is Python 3.8.x to avoid generating 
                                                           # Also works when copied to older unpatched systems
 
 输出 / Output:
-    server/dist/inspection-agent.exe  (单一可执行文件)
-    server/dist/inspection-agent.exe  (single executable file)
+    server/dist/inspection-agent/  (文件夹，根目录仅保留 exe / bat / vbs)
+    server/dist/inspection-agent/  (directory; root keeps only exe / bat / vbs)
 """
 
 import argparse
@@ -100,11 +100,11 @@ TRANSLATIONS = {
         "pyinstaller_not_installed": "错误: 未安装 PyInstaller",
         "please_install_pyinstaller": "请先执行: pip install pyinstaller",
         "packaging_successful": "打包成功!",
-        "output_file": "输出文件: {dist_file}",
+        "output_directory": "输出目录: {dist_dir}",
         "deployment_instructions": "部署方式:",
-        "step1_copy_file": "1. 将上述 exe 文件复制到目标服务器",
+        "step1_copy_folder": "1. 将上述文件夹整体复制到目标服务器",
         "step2_compat_check": "2. (推荐) 先在目标服务器运行一次兼容性检查:",
-        "step2_run_powershell": "   - 右键点击 check_prereqs.ps1 → 使用 PowerShell 运行",
+        "step2_run_powershell": "   - 右键点击 scripts/check_prereqs.ps1 → 使用 PowerShell 运行",
         "step3_run_methods": "3. 运行方式:",
         "run_foreground": "   - 前台运行: 双击 start.bat",
         "run_background": "   - 后台运行: 双击 start_hidden.vbs",
@@ -154,11 +154,11 @@ TRANSLATIONS = {
         "pyinstaller_not_installed": "Error: PyInstaller is not installed",
         "please_install_pyinstaller": "Please run: pip install pyinstaller",
         "packaging_successful": "Packaging successful!",
-        "output_file": "Output file: {dist_file}",
+        "output_directory": "Output directory: {dist_dir}",
         "deployment_instructions": "Deployment instructions:",
-        "step1_copy_file": "1. Copy the exe file to the target server",
+        "step1_copy_folder": "1. Copy the entire folder to the target server",
         "step2_compat_check": "2. (Recommended) Run a compatibility check on the target server first:",
-        "step2_run_powershell": "   - Right-click check_prereqs.ps1 → Run with PowerShell",
+        "step2_run_powershell": "   - Right-click scripts/check_prereqs.ps1 → Run with PowerShell",
         "step3_run_methods": "3. How to run:",
         "run_foreground": "   - Foreground: double-click start.bat",
         "run_background": "   - Background: double-click start_hidden.vbs",
@@ -230,7 +230,7 @@ def build_agent(server_dir, python_exe, name="inspection-agent"):
     cmd = [
         python_exe, "-m", "PyInstaller",
         "--name", name,
-        "--onefile",         # 单一文件模式，默认输出单个 exe / Single-file mode, default output is a single exe
+        "--onedir",          # 单目录模式，依赖文件统一放在 _internal/ 子目录 / Single-directory mode, dependencies go to _internal/
         "--console",         # 控制台程序 / Console application
         "--noupx",           # 禁用 UPX，防止 DLL 损坏导致运行时参数错误 / Disable UPX to avoid DLL corruption causing runtime parameter errors
         "--workpath", os.path.join(server_dir, "build"),
@@ -250,6 +250,8 @@ def create_auxiliary_scripts(dist_dir):
     """创建启动脚本、后台运行脚本和兼容性检查脚本。
 
     Create startup, background-run, and compatibility-check scripts.
+    辅助脚本中除 exe / bat / vbs 外，其余放入 scripts/ 子目录，保持根目录简洁。
+    Auxiliary scripts other than exe / bat / vbs are placed under scripts/ to keep the root clean.
     """
     # 启动脚本
     # Startup script
@@ -268,9 +270,11 @@ def create_auxiliary_scripts(dist_dir):
         f.write('WshShell.Run "inspection-agent.exe --port 5000", 0, False\n')
         f.write('Set WshShell = Nothing\n')
 
-    # 部署前系统兼容性检查脚本
-    # Pre-deployment system compatibility check script
-    ps_path = os.path.join(dist_dir, "check_prereqs.ps1")
+    # 部署前系统兼容性检查脚本，放入 scripts/ 子目录
+    # Pre-deployment system compatibility check script, placed under scripts/
+    scripts_dir = os.path.join(dist_dir, "scripts")
+    os.makedirs(scripts_dir, exist_ok=True)
+    ps_path = os.path.join(scripts_dir, "check_prereqs.ps1")
     with open(ps_path, "w", encoding="utf-8") as f:
         f.write('# 检查 Inspection Agent 运行环境\n')
         f.write('$os = Get-WmiObject Win32_OperatingSystem\n')
@@ -337,15 +341,14 @@ def main():
     clean_build(server_dir)
     build_agent(server_dir, python_exe)
 
-    dist_dir = os.path.join(server_dir, "dist")
-    dist_file = os.path.join(dist_dir, "inspection-agent.exe")
+    dist_dir = os.path.join(server_dir, "dist", "inspection-agent")
     create_auxiliary_scripts(dist_dir)
 
     print("\n" + "=" * 60)
     print(t("packaging_successful"))
-    print(t("output_file", dist_file=dist_file))
+    print(t("output_directory", dist_dir=dist_dir))
     print(t("deployment_instructions"))
-    print(t("step1_copy_file"))
+    print(t("step1_copy_folder"))
     print(t("step2_compat_check"))
     print(t("step2_run_powershell"))
     print(t("step3_run_methods"))

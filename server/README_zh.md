@@ -100,7 +100,7 @@ server/
 ```bash
 bash scripts/build_linux.sh
 ```
-然后将 `server/dist/inspection-agent`（以及需要的辅助脚本）复制到目标服务器运行。
+然后将 `server/dist/inspection-agent/` 整个文件夹复制到目标服务器运行。
 详见 `scripts/README.md`。
 
 ### 输出语言
@@ -164,9 +164,10 @@ pip install pyinstaller
 python scripts/build_windows.py
 ```
 
-将 `server/dist/inspection-agent.exe`（以及需要的辅助脚本）复制到目标服务器：
+将 `server/dist/inspection-agent/` 整个文件夹复制到目标服务器：
 
 ```cmd
+cd inspection-agent
 inspection-agent.exe --port 5000   # 命令行运行
 start.bat          # 前台运行
 start_hidden.vbs   # 后台静默运行（无黑窗口）
@@ -187,9 +188,10 @@ start_hidden.vbs   # 后台静默运行（无黑窗口）
 bash scripts/build_linux.sh
 ```
 
-将 `server/dist/inspection-agent`（以及需要的辅助脚本）复制到目标服务器：
+将 `server/dist/inspection-agent/` 整个文件夹复制到目标服务器：
 
 ```bash
+cd inspection-agent
 ./inspection-agent --port 5000
 # 或使用辅助脚本
 ./start.sh --port 5000
@@ -225,7 +227,7 @@ Start-Process python -ArgumentList "agent.py","--port","5000" -WindowStyle Hidde
 
 **方式 D：可执行程序 + start_hidden.vbs**
 
-打包输出中包含 `start_hidden.vbs`，双击即可后台静默运行单一可执行文件。
+打包后的文件夹中包含 `start_hidden.vbs`，双击即可后台静默运行。
 
 ## 接口说明
 

@@ -9,7 +9,7 @@ Sends HTTP queries to each server's Agent and aggregates the inspection results.
     python main.py
     python main.py --output report.txt
     python main.py --output report.json
-    python main.py --config config_prod.py
+    python main.py --config config_prod.json
     python main.py --lang en
 
 依赖 / Dependencies:
@@ -17,7 +17,6 @@ Sends HTTP queries to each server's Agent and aggregates the inspection results.
 """
 
 import argparse
-import importlib.util
 import json
 import os
 import sys
@@ -108,21 +107,18 @@ class _JsonConfig:
 
 
 def load_config(path: str = "config.json"):
-    """动态加载配置文件，支持 .json 和 .py 格式，默认为当前目录下的 config.json
-    / Dynamically load config file, supporting .json and .py formats; defaults to config.json in the current directory."""
+    """加载 JSON 配置文件，默认为当前目录下的 config.json
+    / Load JSON config file; defaults to config.json in the current directory."""
     abs_path = os.path.abspath(path)
     if not os.path.isfile(abs_path):
         raise FileNotFoundError(f"配置文件不存在: {abs_path}")
 
-    if abs_path.lower().endswith(".json"):
-        with open(abs_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        return _JsonConfig(data)
+    if not abs_path.lower().endswith(".json"):
+        raise ValueError(f"配置文件必须是 JSON 格式: {abs_path}")
 
-    spec = importlib.util.spec_from_file_location("inspection_config", abs_path)
-    config = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(config)
-    return config
+    with open(abs_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    return _JsonConfig(data)
 
 
 def _load_default_config():
@@ -372,7 +368,7 @@ def main(argv=None):
         "-c",
         type=str,
         default="config.json",
-        help="指定配置文件路径，支持 .json 或 .py (默认: config.json) / Path to config file, supports .json or .py (default: config.json)",
+        help="指定 JSON 配置文件路径 (默认: config.json) / Path to JSON config file (default: config.json)",
     )
     parser.add_argument(
         "--output",
