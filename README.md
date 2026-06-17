@@ -92,8 +92,8 @@ By default, this project targets **Windows Server 2008 R2 Enterprise** and requi
    pip install pyinstaller
    python scripts/build_windows.py
    ```
-2. Copy the entire `server/dist/inspection-agent/` folder to the target server.
-3. Run `start.bat` (foreground) or `start_hidden.vbs` (background, silent).
+2. Copy the `server/dist/inspection-agent.exe` file (along with the optional `start.bat` / `start_hidden.vbs` helper scripts) to the target server.
+3. Run `inspection-agent.exe --port 5000`, or double-click `start.bat` (foreground) / `start_hidden.vbs` (background, silent).
 
 > If the current Python version is higher than 3.8.x, the script will report an error and explain why.
 > For Windows Server 2012+ / Win8.1+, use `python scripts/build_windows.py --target modern`.
@@ -212,14 +212,14 @@ pip install pyinstaller
 python scripts/build_client_windows.py
 ```
 
-After packaging, the output is located at `client/dist/inspection-client/` and contains:
+After packaging, the output is located at `client/dist/` and contains:
 - `inspection-client.exe` — Client main program
 - `config.json` — Default configuration file (edit directly)
 - `start.bat` — Foreground run script
 - `start_json.bat` — Run and output a JSON report
 - `start_txt.bat` — Run and output a text report
 
-Deployment: copy the entire `client/dist/inspection-client/` folder to the target Windows management machine,
+Deployment: copy `inspection-client.exe` and `config.json` (along with the optional helper scripts if needed) to the target Windows management machine,
 edit `config.json`, and double-click `start.bat` to run.
 
 > If the current Python version is higher than 3.8.x, the script will report an error and explain why.
@@ -318,7 +318,7 @@ sudo systemctl enable --now inspection-agent
 bash scripts/build_linux.sh
 ```
 
-After packaging, an `inspection-agent` ELF executable and a systemd service template are generated.
+After packaging, a single `inspection-agent` ELF executable and a systemd service template are generated.
 Like the Windows exe, the target machine does not need Python installed. See `scripts/README.md` for details.
 
 ## Testing

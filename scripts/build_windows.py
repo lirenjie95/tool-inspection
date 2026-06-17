@@ -31,8 +31,8 @@ Therefore the default packaging environment is Python 3.8.x to avoid generating 
                                                           # Also works when copied to older unpatched systems
 
 输出 / Output:
-    server/dist/inspection-agent/  (文件夹，包含 exe 和依赖)
-    server/dist/inspection-agent/  (directory containing the exe and dependencies)
+    server/dist/inspection-agent.exe  (单一可执行文件)
+    server/dist/inspection-agent.exe  (single executable file)
 """
 
 import argparse
@@ -100,9 +100,9 @@ TRANSLATIONS = {
         "pyinstaller_not_installed": "错误: 未安装 PyInstaller",
         "please_install_pyinstaller": "请先执行: pip install pyinstaller",
         "packaging_successful": "打包成功!",
-        "output_directory": "输出目录: {dist_dir}",
+        "output_file": "输出文件: {dist_file}",
         "deployment_instructions": "部署方式:",
-        "step1_copy_folder": "1. 将上述文件夹整体复制到目标服务器",
+        "step1_copy_file": "1. 将上述 exe 文件复制到目标服务器",
         "step2_compat_check": "2. (推荐) 先在目标服务器运行一次兼容性检查:",
         "step2_run_powershell": "   - 右键点击 check_prereqs.ps1 → 使用 PowerShell 运行",
         "step3_run_methods": "3. 运行方式:",
@@ -154,9 +154,9 @@ TRANSLATIONS = {
         "pyinstaller_not_installed": "Error: PyInstaller is not installed",
         "please_install_pyinstaller": "Please run: pip install pyinstaller",
         "packaging_successful": "Packaging successful!",
-        "output_directory": "Output directory: {dist_dir}",
+        "output_file": "Output file: {dist_file}",
         "deployment_instructions": "Deployment instructions:",
-        "step1_copy_folder": "1. Copy the entire folder to the target server",
+        "step1_copy_file": "1. Copy the exe file to the target server",
         "step2_compat_check": "2. (Recommended) Run a compatibility check on the target server first:",
         "step2_run_powershell": "   - Right-click check_prereqs.ps1 → Run with PowerShell",
         "step3_run_methods": "3. How to run:",
@@ -230,7 +230,7 @@ def build_agent(server_dir, python_exe, name="inspection-agent"):
     cmd = [
         python_exe, "-m", "PyInstaller",
         "--name", name,
-        "--onedir",          # 单目录模式，稳定性更好 / Single-directory mode, more stable
+        "--onefile",         # 单一文件模式，默认输出单个 exe / Single-file mode, default output is a single exe
         "--console",         # 控制台程序 / Console application
         "--noupx",           # 禁用 UPX，防止 DLL 损坏导致运行时参数错误 / Disable UPX to avoid DLL corruption causing runtime parameter errors
         "--workpath", os.path.join(server_dir, "build"),
@@ -337,14 +337,15 @@ def main():
     clean_build(server_dir)
     build_agent(server_dir, python_exe)
 
-    dist_dir = os.path.join(server_dir, "dist", "inspection-agent")
+    dist_dir = os.path.join(server_dir, "dist")
+    dist_file = os.path.join(dist_dir, "inspection-agent.exe")
     create_auxiliary_scripts(dist_dir)
 
     print("\n" + "=" * 60)
     print(t("packaging_successful"))
-    print(t("output_directory", dist_dir=dist_dir))
+    print(t("output_file", dist_file=dist_file))
     print(t("deployment_instructions"))
-    print(t("step1_copy_folder"))
+    print(t("step1_copy_file"))
     print(t("step2_compat_check"))
     print(t("step2_run_powershell"))
     print(t("step3_run_methods"))

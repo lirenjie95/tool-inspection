@@ -102,7 +102,7 @@ If the target server has an outdated Python version or no Python at all, package
 ```bash
 bash scripts/build_linux.sh
 ```
-Then copy `server/dist/inspection-agent/` to the target server and run it.
+Then copy `server/dist/inspection-agent` (and the helper scripts if needed) to the target server and run it.
 See `scripts/README.md` for details.
 
 ### Output Language
@@ -166,10 +166,10 @@ pip install pyinstaller
 python scripts/build_windows.py
 ```
 
-Copy the entire `server/dist/inspection-agent/` folder to the target server:
+Copy `server/dist/inspection-agent.exe` (along with the helper scripts if needed) to the target server:
 
 ```cmd
-cd inspection-agent
+inspection-agent.exe --port 5000   # Run from command line
 start.bat          # Run in foreground
 start_hidden.vbs   # Run silently in background (no black window)
 ```
@@ -189,9 +189,11 @@ start_hidden.vbs   # Run silently in background (no black window)
 bash scripts/build_linux.sh
 ```
 
-Copy `server/dist/inspection-agent/` to the target server:
+Copy `server/dist/inspection-agent` (and the helper scripts if needed) to the target server:
 
 ```bash
+./inspection-agent --port 5000
+# or use the helper script
 ./start.sh --port 5000
 ```
 
@@ -225,7 +227,7 @@ Start-Process python -ArgumentList "agent.py","--port","5000" -WindowStyle Hidde
 
 **Option D: Executable + start_hidden.vbs**
 
-The packaged folder contains `start_hidden.vbs`; double-click it to run silently in the background.
+The packaged output includes `start_hidden.vbs`; double-click it to run the single executable silently in the background.
 
 ## API Reference
 
