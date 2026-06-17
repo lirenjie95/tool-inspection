@@ -33,7 +33,9 @@ without requiring complex remote protocols such as SSH/WinRM/WMI.
 ├── client/                     # Local inspection endpoint (run on one management machine)
 │   ├── main.py                 # Inspection entry point
 │   ├── config.json             # Server Agent address configuration
-│   └── requirements.txt        # pip install -r requirements.txt
+│   ├── requirements.txt        # pip install -r requirements.txt
+│   ├── README.md               # Client usage guide
+│   └── README_zh.md            # 客户端使用说明
 ├── server/                     # Server Agent (deploy on each inspected server)
 │   ├── agent.py                # HTTP service entry point (pure standard library)
 │   ├── services/               # Inspection service extension directory
@@ -43,7 +45,10 @@ without requiring complex remote protocols such as SSH/WinRM/WMI.
 │   │   ├── memory.py           # Memory collection (implemented)
 │   │   └── iis.py              # IIS collection (extension example, enable manually)
 │   ├── requirements.txt        # Zero dependencies
-│   └── README.md               # Agent deployment instructions
+│   ├── README_windows.md       # Windows Agent deployment guide
+│   ├── README_windows_zh.md    # Windows Agent 部署说明
+│   ├── README_linux.md         # Linux Agent deployment guide
+│   └── README_linux_zh.md      # Linux Agent 部署说明
 ├── scripts/                    # Build scripts
 │   ├── build_windows.py        # Server Windows exe packaging
 │   ├── build_client_windows.py # Client Windows exe packaging
@@ -112,7 +117,7 @@ By default, this project targets **Windows Server 2008 R2 Enterprise** and requi
 New-NetFirewallRule -DisplayName "InspectionAgent" -Direction Inbound -Protocol TCP -LocalPort 5000 -Action Allow
 ```
 
-> For detailed deployment methods (Windows service, scheduled task, nssm, etc.), please refer to `server/README.md`.
+> For detailed deployment methods (Windows service, scheduled task, nssm, etc.), please refer to [`server/README_windows.md`](server/README_windows.md) or [`server/README_linux.md`](server/README_linux.md) depending on your platform.
 
 **Agent Endpoints:**
 

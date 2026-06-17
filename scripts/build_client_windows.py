@@ -321,11 +321,10 @@ def main():
     )
     print(t("copied_default_config", path=f"{dist_dir}/config.json"))
 
-    # 复制中英文 README 到输出目录
-    # Copy Chinese/English READMEs to the output directory
-    readme_src = os.path.join(root, "release", "client-windows")
-    shutil.copy2(os.path.join(readme_src, "README.md"), os.path.join(dist_dir, "README.md"))
-    shutil.copy2(os.path.join(readme_src, "README_zh.md"), os.path.join(dist_dir, "README_zh.md"))
+    # 复制 client 目录的中英文 README 到输出目录
+    # Copy the client READMEs to the output directory
+    shutil.copy2(os.path.join(client_dir, "README.md"), os.path.join(dist_dir, "README.md"))
+    shutil.copy2(os.path.join(client_dir, "README_zh.md"), os.path.join(dist_dir, "README_zh.md"))
 
     # 创建启动脚本
     # Create startup script

@@ -31,7 +31,9 @@
 ├── client/                     # 本地巡检端（只需在一台管理机上运行）
 │   ├── main.py                 # 巡检主入口
 │   ├── config.json             # 服务器 Agent 地址配置
-│   └── requirements.txt        # pip install -r requirements.txt
+│   ├── requirements.txt        # pip install -r requirements.txt
+│   ├── README.md               # Client usage guide
+│   └── README_zh.md            # 客户端使用说明
 ├── server/                     # 服务器 Agent（每台被巡检服务器部署）
 │   ├── agent.py                # HTTP 服务入口（纯标准库）
 │   ├── services/               # 巡检服务扩展目录
@@ -41,7 +43,10 @@
 │   │   ├── memory.py           # 内存采集（已实现）
 │   │   └── iis.py              # IIS 采集（扩展示例，需手动启用）
 │   ├── requirements.txt        # 零依赖
-│   └── README.md               # Agent 部署说明
+│   ├── README_windows.md       # Windows Agent deployment guide
+│   ├── README_windows_zh.md    # Windows Agent 部署说明
+│   ├── README_linux.md         # Linux Agent deployment guide
+│   └── README_linux_zh.md      # Linux Agent 部署说明
 ├── scripts/                    # 打包脚本
 │   ├── build_windows.py        # 服务器 Windows exe 打包
 │   ├── build_client_windows.py # 客户端 Windows exe 打包
@@ -110,7 +115,7 @@
 New-NetFirewallRule -DisplayName "InspectionAgent" -Direction Inbound -Protocol TCP -LocalPort 5000 -Action Allow
 ```
 
-> 详细部署方式（后台服务、计划任务、nssm 等）请参考 `server/README.md`
+> 详细部署方式（后台服务、计划任务、nssm 等）请参考 [`server/README_windows_zh.md`](server/README_windows_zh.md) 或 [`server/README_linux_zh.md`](server/README_linux_zh.md)。
 
 **Agent 接口：**
 
