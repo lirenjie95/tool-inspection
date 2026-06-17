@@ -33,7 +33,9 @@ without requiring complex remote protocols such as SSH/WinRM/WMI.
 ├── client/                     # Local inspection endpoint (run on one management machine)
 │   ├── main.py                 # Inspection entry point
 │   ├── config.json             # Server Agent address configuration
-│   └── requirements.txt        # pip install -r requirements.txt
+│   ├── requirements.txt        # pip install -r requirements.txt
+│   ├── README.md               # Client usage guide
+│   └── README_zh.md            # 客户端使用说明
 ├── server/                     # Server Agent (deploy on each inspected server)
 │   ├── agent.py                # HTTP service entry point (pure standard library)
 │   ├── services/               # Inspection service extension directory
@@ -52,7 +54,13 @@ without requiring complex remote protocols such as SSH/WinRM/WMI.
 ├── tests/                      # Unit tests
 │   ├── __init__.py
 │   ├── test_client.py
-│   └── test_server.py
+│   ├── test_server.py
+│   ├── README.md               # Test guide
+│   └── README_zh.md            # 测试说明
+├── release/                    # Bilingual READMEs for release packages
+│   ├── agent-linux/
+│   ├── agent-windows/
+│   └── client-windows/
 ├── .github/
 │   └── workflows/
 │       └── ci-cd.yml           # GitHub Actions CI/CD

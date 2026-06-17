@@ -31,7 +31,9 @@
 ├── client/                     # 本地巡检端（只需在一台管理机上运行）
 │   ├── main.py                 # 巡检主入口
 │   ├── config.json             # 服务器 Agent 地址配置
-│   └── requirements.txt        # pip install -r requirements.txt
+│   ├── requirements.txt        # pip install -r requirements.txt
+│   ├── README.md               # Client usage guide
+│   └── README_zh.md            # 客户端使用说明
 ├── server/                     # 服务器 Agent（每台被巡检服务器部署）
 │   ├── agent.py                # HTTP 服务入口（纯标准库）
 │   ├── services/               # 巡检服务扩展目录
@@ -50,7 +52,13 @@
 ├── tests/                      # 单元测试
 │   ├── __init__.py
 │   ├── test_client.py
-│   └── test_server.py
+│   ├── test_server.py
+│   ├── README.md               # Test guide
+│   └── README_zh.md            # 测试说明
+├── release/                    # Release 包双语 README
+│   ├── agent-linux/
+│   ├── agent-windows/
+│   └── client-windows/
 ├── .github/
 │   └── workflows/
 │       └── ci-cd.yml           # GitHub Actions CI/CD
