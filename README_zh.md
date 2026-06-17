@@ -1,6 +1,6 @@
 # 服务器巡检脚本（Agent-Client 架构）
 
-针对内网 Windows 服务器的轻量级巡检工具，采用 **Agent-Client** 模式，
+针对内网 Windows/Linux 服务器的轻量级巡检工具，采用 **Agent-Client** 模式，
 无需 SSH/WinRM/WMI 等复杂远程协议。
 
 ## 架构说明
