@@ -326,8 +326,8 @@ def main():
         f.write("inspection-client.exe\n")
         f.write("pause\n")
 
-    # 创建输出 JSON 报告的快捷脚本
-    # Create shortcut script for JSON report output
+    # 创建输出 JSON 报告的快捷脚本（保留在根目录）
+    # Create shortcut script for JSON report output (kept at root)
     json_bat_path = os.path.join(dist_dir, "start_json.bat")
     with open(json_bat_path, "w", encoding="utf-8") as f:
         f.write("@echo off\n")
@@ -335,8 +335,8 @@ def main():
         f.write("inspection-client.exe --output report.json\n")
         f.write("pause\n")
 
-    # 创建输出文本报告的快捷脚本
-    # Create shortcut script for text report output
+    # 创建输出文本报告的快捷脚本（保留在根目录）
+    # Create shortcut script for text report output (kept at root)
     txt_bat_path = os.path.join(dist_dir, "start_txt.bat")
     with open(txt_bat_path, "w", encoding="utf-8") as f:
         f.write("@echo off\n")

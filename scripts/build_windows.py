@@ -104,7 +104,7 @@ TRANSLATIONS = {
         "deployment_instructions": "部署方式:",
         "step1_copy_folder": "1. 将上述文件夹整体复制到目标服务器",
         "step2_compat_check": "2. (推荐) 先在目标服务器运行一次兼容性检查:",
-        "step2_run_powershell": "   - 右键点击 scripts/check_prereqs.ps1 → 使用 PowerShell 运行",
+        "step2_run_powershell": "   - 右键点击 _internal/scripts/check_prereqs.ps1 -> 使用 PowerShell 运行",
         "step3_run_methods": "3. 运行方式:",
         "run_foreground": "   - 前台运行: 双击 start.bat",
         "run_background": "   - 后台运行: 双击 start_hidden.vbs",
@@ -158,7 +158,7 @@ TRANSLATIONS = {
         "deployment_instructions": "Deployment instructions:",
         "step1_copy_folder": "1. Copy the entire folder to the target server",
         "step2_compat_check": "2. (Recommended) Run a compatibility check on the target server first:",
-        "step2_run_powershell": "   - Right-click scripts/check_prereqs.ps1 → Run with PowerShell",
+        "step2_run_powershell": "   - Right-click _internal/scripts/check_prereqs.ps1 -> Run with PowerShell",
         "step3_run_methods": "3. How to run:",
         "run_foreground": "   - Foreground: double-click start.bat",
         "run_background": "   - Background: double-click start_hidden.vbs",
@@ -270,9 +270,10 @@ def create_auxiliary_scripts(dist_dir):
         f.write('WshShell.Run "inspection-agent.exe --port 5000", 0, False\n')
         f.write('Set WshShell = Nothing\n')
 
-    # 部署前系统兼容性检查脚本，放入 scripts/ 子目录
-    # Pre-deployment system compatibility check script, placed under scripts/
-    scripts_dir = os.path.join(dist_dir, "scripts")
+    # 部署前系统兼容性检查脚本，放入 _internal/scripts/ 子目录，使根目录只保留 exe / bat / vbs
+    # Pre-deployment system compatibility check script, placed under _internal/scripts/
+    # so the root only contains exe / bat / vbs
+    scripts_dir = os.path.join(dist_dir, "_internal", "scripts")
     os.makedirs(scripts_dir, exist_ok=True)
     ps_path = os.path.join(scripts_dir, "check_prereqs.ps1")
     with open(ps_path, "w", encoding="utf-8") as f:
