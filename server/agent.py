@@ -34,7 +34,6 @@ import argparse
 import json
 import logging
 import platform
-import traceback
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
 from services.disk import collect as collect_disk
@@ -112,7 +111,10 @@ def _safe_collect(name, collector, lang=None):
         return collector(lang=lang)
     except Exception as e:
         logger.warning(t("collect_service_failed", name=name, error=e))
-        return {"error": str(e), "traceback": traceback.format_exc()}
+        # 仅返回错误消息，避免通过 HTTP 响应泄露源代码路径等敏感信息
+        # Only return the error message to avoid leaking sensitive information
+        # such as source code paths through the HTTP response.
+        return {"error": str(e)}
 
 
 def get_health_data(lang=None):

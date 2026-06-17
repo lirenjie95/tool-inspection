@@ -21,6 +21,33 @@ import urllib.request
 import urllib.error
 
 
+# Python 3.7 嵌入式运行时官方 SHA256 校验和
+# Official SHA256 checksum for the Python 3.7 embedded runtime
+PY37_EMBED_SHA256 = "18627a097adf47829a847053febac5532376075243e233bd9ec61d6ea09dee1f"
+
+
+def _sha256_file(path):
+    """计算文件的 SHA256 摘要 / Compute the SHA256 digest of a file."""
+    import hashlib
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(8192), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def verify_file_hash(path, expected, t):
+    """校验文件 SHA256，不匹配则终止程序。
+
+    Verify the file's SHA256 hash; exit the program if it does not match.
+    """
+    actual = _sha256_file(path)
+    if actual.lower() != expected.lower():
+        print(t("hash_verify_failed", path=path, expected=expected, actual=actual))
+        sys.exit(1)
+    print(t("hash_verify_passed", path=path))
+
+
 # 目标系统与最高支持的 Python 版本
 # Target systems and the maximum supported Python version
 TARGET_COMPATIBILITY = {
@@ -166,6 +193,10 @@ def setup_py37_runtime(cache_dir, t):
         zip_path = os.path.join(cache_dir, PY37_EMBED_ZIP)
         if not os.path.exists(zip_path):
             download_file(PY37_EMBED_URL, zip_path, t, PY37_EMBED_ZIP)
+
+        # 校验 Python 嵌入式运行时完整性，防止供应链篡改
+        # Verify the embedded Python runtime integrity to prevent supply-chain tampering
+        verify_file_hash(zip_path, PY37_EMBED_SHA256, t)
 
         print(t("extracting", filename=PY37_EMBED_ZIP))
         if os.path.exists(py37_dir):

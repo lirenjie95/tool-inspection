@@ -321,6 +321,7 @@ class TestGetHealthData(unittest.TestCase):
             self.assertEqual(data["status"], "running")
             self.assertIn("error", data["disks"])
             self.assertIn("disk error", data["disks"]["error"])
+            self.assertNotIn("traceback", data["disks"])
 
     def test_get_health_data_exception_returns_500(self):
         """测试 get_health_data 整体异常时返回 500
