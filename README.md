@@ -2,7 +2,7 @@
 
 [中文文档](README_zh.md)
 
-A lightweight inspection tool for intranet Windows servers using an **Agent-Client** model,
+A lightweight inspection tool for intranet Windows/Linux servers using an **Agent-Client** model,
 without requiring complex remote protocols such as SSH/WinRM/WMI.
 
 ## Architecture
