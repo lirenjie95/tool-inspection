@@ -90,8 +90,8 @@
    pip install pyinstaller
    python scripts/build_windows.py
    ```
-2. 将 `server/dist/inspection-agent/` **整个文件夹**复制到目标服务器
-3. 运行 `start.bat`（前台）或 `start_hidden.vbs`（后台静默）
+2. 将 `server/dist/inspection-agent.exe`（以及可选的 `start.bat` / `start_hidden.vbs` 辅助脚本）复制到目标服务器
+3. 运行 `inspection-agent.exe --port 5000`，或双击 `start.bat`（前台）/ `start_hidden.vbs`（后台静默）
 
 > 如果当前 Python 版本高于 3.8.x，脚本会报错并提示原因。
 > 若目标服务器为 Windows Server 2012+ / Win8.1+，可使用 `python scripts/build_windows.py --target modern`。
@@ -210,14 +210,14 @@ pip install pyinstaller
 python scripts/build_client_windows.py
 ```
 
-打包完成后，输出位于 `client/dist/inspection-client/`，包含：
-- `inspection-client.exe` — 客户端主程序
+打包完成后，输出位于 `client/dist/`，包含：
+- `inspection-client.exe` — 客户端主程序（单一可执行文件）
 - `config.json` — 默认配置文件（可直接修改）
 - `start.bat` — 前台运行脚本
 - `start_json.bat` — 运行并输出 JSON 报告
 - `start_txt.bat` — 运行并输出文本报告
 
-部署方式：将 `client/dist/inspection-client/` **整个文件夹**复制到目标 Windows 管理机，
+部署方式：将 `inspection-client.exe` 与 `config.json`（以及可选的辅助脚本）复制到目标 Windows 管理机，
 编辑 `config.json` 后双击 `start.bat` 即可运行。
 
 > 如果当前 Python 版本高于 3.8.x，脚本会报错并说明原因。
@@ -316,7 +316,7 @@ sudo systemctl enable --now inspection-agent
 bash scripts/build_linux.sh
 ```
 
-打包后会生成 `inspection-agent` ELF 可执行文件和 systemd service 模板，
+打包后会生成单一 `inspection-agent` ELF 可执行文件和 systemd service 模板，
 和 Windows exe 一样无需目标机安装 Python。详见 `scripts/README.md`。
 
 ## 测试

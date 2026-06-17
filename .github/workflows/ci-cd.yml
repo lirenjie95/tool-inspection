@@ -96,10 +96,10 @@ jobs:
         run: |
           python -m PyInstaller \
             --name inspection-agent \
-            --onedir \
+            --onefile \
             --console \
             agent.py
-          DIST_DIR="dist/inspection-agent"
+          DIST_DIR="dist"
           cat > "$DIST_DIR/start.sh" << 'EOF'
           #!/bin/bash
           SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -123,7 +123,7 @@ jobs:
           WantedBy=multi-user.target
           EOF
           mkdir -p dist/inspection-agent-linux
-          mv dist/inspection-agent/* dist/inspection-agent-linux/
+          mv dist/inspection-agent dist/start.sh dist/inspection-agent.service dist/inspection-agent-linux/
           cd dist && tar czvf inspection-agent-linux.tar.gz inspection-agent-linux/
 
       - name: Upload Linux artifact
@@ -163,10 +163,10 @@ jobs:
           # Use --no-patch-required mode so the generated exe can run directly on
           # Windows Server 2008 R2 / Win7 without KB3063858/KB2533623 patches.
           python scripts/build_windows.py --no-patch-required
-          $dist = "server/dist/inspection-agent"
+          $dist = "server/dist"
           $winDist = "server/dist/inspection-agent-windows"
           New-Item -ItemType Directory -Force -Path $winDist
-          Copy-Item -Path "$dist/*" -Destination $winDist -Recurse -Force
+          Copy-Item -Path "$dist/inspection-agent.exe", "$dist/start.bat", "$dist/start_hidden.vbs", "$dist/check_prereqs.ps1" -Destination $winDist -Force
           Compress-Archive -Path "$winDist/*" -DestinationPath "server/dist/inspection-agent-windows.zip" -Force
         shell: pwsh
 
@@ -207,10 +207,10 @@ jobs:
           # 使用 --no-patch-required 模式，确保生成的客户端 exe 在未安装 KB3063858/KB2533623 补丁的
           # Windows Server 2008 R2 / Win7 上也能直接运行
           python scripts/build_client_windows.py --no-patch-required
-          $dist = "client/dist/inspection-client"
+          $dist = "client/dist"
           $winDist = "client/dist/inspection-client-windows"
           New-Item -ItemType Directory -Force -Path $winDist
-          Copy-Item -Path "$dist/*" -Destination $winDist -Recurse -Force
+          Copy-Item -Path "$dist/inspection-client.exe", "$dist/config.json", "$dist/start.bat", "$dist/start_json.bat", "$dist/start_txt.bat" -Destination $winDist -Force
           Compress-Archive -Path "$winDist/*" -DestinationPath "client/dist/inspection-client-windows.zip" -Force
         shell: pwsh
 

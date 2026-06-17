@@ -9,8 +9,8 @@ so they can run directly on servers or management machines without a Python inst
 
 > **CI/CD Automated Builds**: This project is configured with GitHub Actions. When a `v*` tag is pushed, it automatically builds and publishes to a GitHub Release:
 > - `inspection-agent-linux.tar.gz` (Linux ELF + `start.sh` + `inspection-agent.service`)
-> - `inspection-agent-windows.zip` (Windows exe + `start.bat` + `start_hidden.vbs` + `check_prereqs.ps1`)
-> - `inspection-client-windows.zip` (Windows client exe + `config.json` + `start.bat` / `start_json.bat` / `start_txt.bat`)
+> - `inspection-agent-windows.zip` (Windows single exe + `start.bat` + `start_hidden.vbs` + `check_prereqs.ps1`)
+> - `inspection-client-windows.zip` (Windows client single exe + `config.json` + `start.bat` / `start_json.bat` / `start_txt.bat`)
 >
 > Both the Windows Agent and the Windows Client in CI are packaged using the `--no-patch-required` mode by default,
 > so Release packages can run directly on Windows Server 2008 R2 / Win7 systems without the KB3063858/KB2533623 patches.
@@ -72,20 +72,19 @@ ImportError: DLL load failed while importing _socket: parameter error.
 
 Python 3.7 does not use this flag, so the resulting exe can run directly on unpatched legacy systems.
 
-After packaging, the output is located at `server/dist/inspection-agent/` and contains:
-- `inspection-agent.exe` — Main program
+After packaging, the output is located at `server/dist/` and contains:
+- `inspection-agent.exe` — Main program (single executable)
 - `start.bat` — Foreground run script
 - `start_hidden.vbs` — Background silent run script (no black window)
 - `check_prereqs.ps1` — Pre-deployment system compatibility check script
-- Various dependency DLLs
 
 > Note: The local default packaging target is `ws2008r2` (requires Python 3.8.x), while CI Release packages use `--no-patch-required`.
 > To also generate a package locally that is compatible with unpatched legacy systems, explicitly add `--no-patch-required`.
 
 ### Deployment
 
-Copy the entire `server/dist/inspection-agent/` folder to the target Windows server,
-then run `start.bat` or `start_hidden.vbs`.
+Copy `server/dist/inspection-agent.exe` (along with the helper scripts if needed) to the target Windows server,
+then run `inspection-agent.exe --port 5000`, or double-click `start.bat` / `start_hidden.vbs`.
 
 It is recommended to run `check_prereqs.ps1` once on the target server before deployment to quickly check the patch status.
 
@@ -136,17 +135,16 @@ python scripts/build_client_windows.py --no-patch-required
 This mode uses the same Python 3.7 embedded runtime as the server build (see [Server Windows Packaging](#server-windows-packaging)),
 so the resulting client exe can run directly on unpatched legacy systems.
 
-After packaging, the output is located at `client/dist/inspection-client/` and contains:
-- `inspection-client.exe` — Client main program
+After packaging, the output is located at `client/dist/` and contains:
+- `inspection-client.exe` — Client main program (single executable)
 - `config.json` — Default configuration file (edit directly)
 - `start.bat` — Foreground run script
 - `start_json.bat` — Run and output a JSON report
 - `start_txt.bat` — Run and output a text report
-- Various dependency DLLs
 
 ### Deployment
 
-Copy the entire `client/dist/inspection-client/` folder to the target Windows management machine,
+Copy `inspection-client.exe` and `config.json` (along with the helper scripts if needed) to the target Windows management machine,
 edit `config.json` to fill in the server Agent addresses, and double-click `start.bat` to run.
 
 ---
@@ -165,23 +163,24 @@ pip install pyinstaller
 bash scripts/build_linux.sh
 ```
 
-After packaging, the output is located at `server/dist/inspection-agent/` and contains:
-- `inspection-agent` — ELF executable (similar to a Windows exe)
+After packaging, the output is located at `server/dist/` and contains:
+- `inspection-agent` — ELF executable (single executable, similar to a Windows exe)
 - `start.sh` — Startup script
 - `inspection-agent.service` — systemd service template
-- Various dependency so libraries
 
 ### Deployment
 
 **Option 1: Foreground Run**
 ```bash
-cd inspection-agent
+cd /opt/inspection-agent
+./inspection-agent --port 5000
+# or use the helper script
 ./start.sh --port 5000
 ```
 
 **Option 2: systemd Background Service (Recommended)**
 ```bash
-sudo cp inspection-agent/inspection-agent.service /etc/systemd/system/
+sudo cp inspection-agent.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now inspection-agent
 sudo systemctl status inspection-agent
@@ -201,7 +200,8 @@ For example:
 ## FAQ
 
 **Q: The packaged program fails to run, reporting missing DLL/so files?**
-A: The `--onedir` mode already includes all dependencies. Make sure you copied the **entire folder**, not just a single exe file.
+A: With `--onefile` mode, the executable unpacks its dependencies to a temporary directory at runtime and should not require manual DLL/so management.
+   If you switched back to `--onedir` mode, make sure you copied the **entire folder**, not just a single exe file.
 
 **Q: It reports `ImportError: DLL load failed while importing _socket: parameter error` at runtime?**
 A: This is the typical symptom of Windows Server 2008 R2 / Win7 missing the [KB3063858](https://support.microsoft.com/kb/3063858) patch.
@@ -228,6 +228,6 @@ All packaging scripts default to Chinese output and support English.
 - **Windows Client**: `python scripts/build_client_windows.py --lang en`
 - **Linux Agent**: `OUTPUT_LANG=en bash scripts/build_linux.sh`
 
-**Q: Can it be packaged as a single file (--onefile)?**
-A: Yes, but `--onedir` mode starts faster and has better compatibility, especially for legacy systems. If you need a single file,
-   change `--onedir` to `--onefile` in the script.
+**Q: Can it be packaged as a directory (--onedir)?**
+A: Yes, but the default is `--onefile` for easier distribution. If you prefer `--onedir` mode (which starts slightly faster and may have
+   better compatibility in some legacy environments), change `--onefile` to `--onedir` in the script.

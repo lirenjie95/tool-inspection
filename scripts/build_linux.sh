@@ -17,8 +17,8 @@
 #     bash scripts/build_linux.sh
 #
 # 输出 / Output:
-#     server/dist/inspection-agent/  (文件夹，包含 ELF 可执行文件和依赖)
-#     server/dist/inspection-agent/  (directory containing the ELF executable and dependencies)
+#     server/dist/inspection-agent  (单一 ELF 可执行文件)
+#     server/dist/inspection-agent  (single ELF executable)
 
 set -e
 
@@ -57,16 +57,16 @@ cd "$SERVER_DIR"
 rm -rf build dist *.spec
 
 # 打包
-# --onedir 模式兼容性最好，避免单文件解压问题
+# --onefile 模式默认输出单一 ELF，便于分发
 # Package
-# --onedir mode has the best compatibility and avoids single-file extraction issues
+# --onefile mode outputs a single ELF by default for easier distribution
 python3 -m PyInstaller \
     --name inspection-agent \
-    --onedir \
+    --onefile \
     --console \
     agent.py
 
-DIST_DIR="$SERVER_DIR/dist/inspection-agent"
+DIST_DIR="$SERVER_DIR/dist"
 
 # 创建启动脚本
 # Create startup script
@@ -100,10 +100,10 @@ EOF
 
 msg "========================================" "========================================"
 msg "打包成功!" "Packaging successful!"
-msg "输出目录: $DIST_DIR" "Output directory: $DIST_DIR"
+msg "输出文件: $DIST_DIR/inspection-agent" "Output file: $DIST_DIR/inspection-agent"
 msg "" ""
 msg "部署方式:" "Deployment instructions:"
-msg "1. 将上述文件夹整体复制到目标服务器" "1. Copy the entire folder to the target server"
+msg "1. 将上述可执行文件复制到目标服务器" "1. Copy the executable to the target server"
 msg "2. 运行方式:" "2. How to run:"
 msg "   - 前台运行: ./start.sh --port 5000" "   - Foreground: ./start.sh --port 5000"
 msg "   - 后台运行(systemd):" "   - Background (systemd):"

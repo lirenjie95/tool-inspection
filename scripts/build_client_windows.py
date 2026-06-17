@@ -31,8 +31,8 @@ Therefore the default packaging environment is Python 3.8.x to avoid generating 
                                                                  # Also works on unpatched Win7/2008 R2
 
 输出 / Output:
-    client/dist/inspection-client/  (文件夹，包含 exe 和依赖)
-    client/dist/inspection-client/  (directory containing the exe and dependencies)
+    client/dist/inspection-client.exe  (单一可执行文件)
+    client/dist/inspection-client.exe  (single executable file)
 """
 
 import argparse
@@ -103,9 +103,9 @@ TRANSLATIONS = {
         "client_deps_failed": "错误: 客户端依赖安装失败",
         "copied_default_config": "已复制默认配置文件: {path}",
         "packaging_successful": "打包成功!",
-        "output_directory": "输出目录: {dist_dir}",
+        "output_file": "输出文件: {dist_file}",
         "deployment_instructions": "部署方式:",
-        "step1_copy_folder": "1. 将上述文件夹整体复制到目标 Windows 管理机",
+        "step1_copy_files": "1. 将上述 exe 与 config.json 复制到目标 Windows 管理机",
         "step2_edit_config": "2. 编辑 config.json，填入实际服务器 Agent 地址",
         "step3_run_methods": "3. 运行方式:",
         "run_foreground": "   - 前台运行: 双击 start.bat",
@@ -160,9 +160,9 @@ TRANSLATIONS = {
         "client_deps_failed": "Error: Client dependency installation failed",
         "copied_default_config": "Copied default config file: {path}",
         "packaging_successful": "Packaging successful!",
-        "output_directory": "Output directory: {dist_dir}",
+        "output_file": "Output file: {dist_file}",
         "deployment_instructions": "Deployment instructions:",
-        "step1_copy_folder": "1. Copy the entire folder to the target Windows management machine",
+        "step1_copy_files": "1. Copy the exe and config.json to the target Windows management machine",
         "step2_edit_config": "2. Edit config.json with actual server Agent addresses",
         "step3_run_methods": "3. How to run:",
         "run_foreground": "   - Foreground: double-click start.bat",
@@ -287,13 +287,13 @@ def main():
     clean_build(client_dir)
 
     # 打包
-    # --onedir 模式兼容性更好，避免单文件解压问题
+    # --onefile 模式默认输出单一 exe，便于分发
     # Package
-    # --onedir mode has better compatibility and avoids single-file extraction issues
+    # --onefile mode outputs a single exe by default for easier distribution
     cmd = [
         python_exe, "-m", "PyInstaller",
         "--name", "inspection-client",
-        "--onedir",
+        "--onefile",
         "--console",
         "--workpath", os.path.join(client_dir, "build"),
         "--distpath", os.path.join(client_dir, "dist"),
@@ -307,7 +307,7 @@ def main():
         print(t("packaging_failed"))
         sys.exit(1)
 
-    dist_dir = os.path.join(client_dir, "dist", "inspection-client")
+    dist_dir = os.path.join(client_dir, "dist")
 
     # 复制默认配置文件到输出目录，方便用户直接修改
     # Copy the default config file to the output directory for easy user modification
@@ -344,11 +344,13 @@ def main():
         f.write("inspection-client.exe --output report.txt\n")
         f.write("pause\n")
 
+    dist_file = os.path.join(dist_dir, "inspection-client.exe")
+
     print("\n" + "=" * 60)
     print(t("packaging_successful"))
-    print(t("output_directory", dist_dir=dist_dir))
+    print(t("output_file", dist_file=dist_file))
     print(t("deployment_instructions"))
-    print(t("step1_copy_folder"))
+    print(t("step1_copy_files"))
     print(t("step2_edit_config"))
     print(t("step3_run_methods"))
     print(t("run_foreground"))
