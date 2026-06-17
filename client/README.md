@@ -6,6 +6,8 @@ This folder contains the local inspection client. It queries each server's Agent
 
 For the overall architecture and deployment guide, see the [project root README](../README.md).
 
+> **Source vs. Packaged:** This README describes both running from the `client/` source folder and running a packaged executable. When using a CI release package, the root contains `inspection-client.exe`, `config.json`, helper `start*.bat` scripts, and runtime dependencies under `_internal/`.
+
 ## Files
 
 - `main.py` — Client entry point

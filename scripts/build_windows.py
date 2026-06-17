@@ -349,11 +349,10 @@ def main():
     dist_dir = os.path.join(server_dir, "dist", "inspection-agent")
     create_auxiliary_scripts(dist_dir)
 
-    # 复制中英文 README 到输出目录
-    # Copy Chinese/English READMEs to the output directory
-    readme_src = os.path.join(root, "release", "agent-windows")
-    shutil.copy2(os.path.join(readme_src, "README.md"), os.path.join(dist_dir, "README.md"))
-    shutil.copy2(os.path.join(readme_src, "README_zh.md"), os.path.join(dist_dir, "README_zh.md"))
+    # 复制 server 目录的中英文 README 到输出目录
+    # Copy the server READMEs to the output directory
+    shutil.copy2(os.path.join(server_dir, "README.md"), os.path.join(dist_dir, "README.md"))
+    shutil.copy2(os.path.join(server_dir, "README_zh.md"), os.path.join(dist_dir, "README_zh.md"))
 
     print("\n" + "=" * 60)
     print(t("packaging_successful"))

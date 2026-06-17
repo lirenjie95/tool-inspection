@@ -8,9 +8,9 @@ The packaging scripts convert `server/agent.py` and `client/main.py` along with 
 so they can run directly on servers or management machines without a Python installation.
 
 > **CI/CD Automated Builds**: This project is configured with GitHub Actions. When a `v*` tag is pushed, it automatically builds and publishes to a GitHub Release:
-> - `inspection-agent-linux.tar.gz` (Linux ELF + `start.sh` + `scripts/inspection-agent.service` + `README.md` / `README_zh.md`)
-> - `inspection-agent-windows.zip` (Windows exe + `start.bat` + `start_hidden.vbs` + `scripts/check_prereqs.ps1` + `README.md` / `README_zh.md`)
-> - `inspection-client-windows.zip` (Windows client exe + `config.json` + `start.bat` / `start_json.bat` / `start_txt.bat` + `README.md` / `README_zh.md`)
+> - `inspection-agent-linux.tar.gz` (Linux ELF + `start.sh` + `scripts/inspection-agent.service` + `server/README.md` / `server/README_zh.md`)
+> - `inspection-agent-windows.zip` (Windows exe + `start.bat` + `start_hidden.vbs` + `scripts/check_prereqs.ps1` + `server/README.md` / `server/README_zh.md`)
+> - `inspection-client-windows.zip` (Windows client exe + `config.json` + `start.bat` / `start_json.bat` / `start_txt.bat` + `client/README.md` / `client/README_zh.md`)
 >
 > Both the Windows Agent and the Windows Client in CI are packaged using the `--no-patch-required` mode by default,
 > so Release packages can run directly on Windows Server 2008 R2 / Win7 systems without the KB3063858/KB2533623 patches.

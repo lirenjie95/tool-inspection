@@ -4,6 +4,8 @@
 
 整体架构与部署指南请参见[项目根目录 README](../README.md)。
 
+> **源码运行 vs 打包运行：** 本文档同时说明从 `client/` 源码文件夹运行，以及运行打包后的可执行文件两种方式。使用 CI Release 包时，根目录包含 `inspection-client.exe`、`config.json`、`start*.bat` 辅助脚本，运行时依赖位于 `_internal/` 下。
+
 ## 文件说明
 
 - `main.py` — 客户端主入口

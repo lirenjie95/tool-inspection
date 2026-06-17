@@ -55,10 +55,6 @@ without requiring complex remote protocols such as SSH/WinRM/WMI.
 │   ├── __init__.py
 │   ├── test_client.py
 │   └── test_server.py
-├── release/                    # Bilingual READMEs for release packages
-│   ├── agent-linux/
-│   ├── agent-windows/
-│   └── client-windows/
 ├── .github/
 │   └── workflows/
 │       └── ci-cd.yml           # GitHub Actions CI/CD

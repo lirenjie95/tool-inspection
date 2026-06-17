@@ -1,15 +1,19 @@
-# Server Inspection Agent (Standalone Deployment Package)
+# Server Inspection Agent
 
 [中文文档](README_zh.md)
 
-This folder contains the Agent program that needs to run on **each server being inspected**.
+This is the Agent program that runs on **each server being inspected**. It exposes a lightweight HTTP interface for the local inspection client to query.
+
+> **Source vs. Packaged:** This README describes both running from the `server/` source folder and running a packaged executable. When using a CI release package, the root contains the executable plus helper scripts (`start.bat`, `start.sh`, `start_hidden.vbs`, etc.) and runtime dependencies are under `_internal/`.
 
 ## How It Works
 
 The Agent runs a lightweight HTTP service locally on the server. It collects information such as disk usage via local PowerShell/df commands,
 and responds to HTTP queries from the local inspection client.
 
-## Project Structure
+## Project Structure (Source)
+
+When running from source, the folder contains:
 
 ```
 server/
@@ -23,6 +27,8 @@ server/
 ├── requirements.txt      # Zero third-party dependencies
 └── README.md             # This file
 ```
+
+When using a packaged release, the executable embeds the above files; see the helper scripts in the package root for how to run.
 
 ## Deployment Requirements
 
