@@ -54,9 +54,7 @@ without requiring complex remote protocols such as SSH/WinRM/WMI.
 ├── tests/                      # Unit tests
 │   ├── __init__.py
 │   ├── test_client.py
-│   ├── test_server.py
-│   ├── README.md               # Test guide
-│   └── README_zh.md            # 测试说明
+│   └── test_server.py
 ├── release/                    # Bilingual READMEs for release packages
 │   ├── agent-linux/
 │   ├── agent-windows/

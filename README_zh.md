@@ -52,9 +52,7 @@
 ├── tests/                      # 单元测试
 │   ├── __init__.py
 │   ├── test_client.py
-│   ├── test_server.py
-│   ├── README.md               # Test guide
-│   └── README_zh.md            # 测试说明
+│   └── test_server.py
 ├── release/                    # Release 包双语 README
 │   ├── agent-linux/
 │   ├── agent-windows/
