@@ -6,8 +6,8 @@
 方便在没有安装 Python 的服务器或管理机上直接运行。
 
 > **CI/CD 自动构建**：本项目配置了 GitHub Actions，在推送 `v*` 标签时会自动构建并发布到 GitHub Release：
-> - `inspection-agent-linux.tar.gz`（Linux ELF + `start.sh` + `scripts/inspection-agent.service` + `server/README.md` / `server/README_zh.md`）
-> - `inspection-agent-windows.zip`（Windows exe + `start.bat` + `start_hidden.vbs` + `scripts/check_prereqs.ps1` + `server/README.md` / `server/README_zh.md`）
+> - `inspection-agent-linux.tar.gz`（Linux ELF + `start.sh` + `scripts/inspection-agent.service` + `server/README_linux.md` / `server/README_linux_zh.md`）
+> - `inspection-agent-windows.zip`（Windows exe + `start.bat` + `start_hidden.vbs` + `scripts/check_prereqs.ps1` + `server/README_windows.md` / `server/README_windows_zh.md`）
 > - `inspection-client-windows.zip`（Windows 客户端 exe + `config.json` + `start.bat` / `start_json.bat` / `start_txt.bat` + `client/README.md` / `client/README_zh.md`）
 >
 > 其中 Windows Agent 与 Windows 客户端在 CI 中均默认使用 `--no-patch-required` 模式打包，
