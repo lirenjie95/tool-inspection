@@ -187,45 +187,31 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.11"
+          python-version: "3.8"
 
-      - name: Install dependencies
-        run: |
-          pip install pyinstaller
-          pip install -r client/requirements.txt
+      - name: Install PyInstaller
+        run: pip install pyinstaller
+
+      - name: Cache Python 3.7 legacy runtime
+        uses: actions/cache@v4
+        with:
+          path: .py37-legacy-cache
+          key: ${{ runner.os }}-py37-legacy-${{ hashFiles('scripts/build_windows.py', 'scripts/build_client_windows.py', 'scripts/_build_common.py') }}
+          restore-keys: |
+            ${{ runner.os }}-py37-legacy-
 
       - name: Build Windows client executable
-        working-directory: ./client
+        env:
+          PYTHONIOENCODING: utf-8
         run: |
-          python -m PyInstaller `
-            --name inspection-client `
-            --onedir `
-            --console `
-            main.py
-          $dist = "dist/inspection-client"
-          Copy-Item -Path "config.json" -Destination "$dist/config.json" -Force
-          @"
-          @echo off
-          cd /d "%~dp0"
-          inspection-client.exe
-          pause
-          "@ | Out-File -Encoding utf8 "$dist/start.bat"
-          @"
-          @echo off
-          cd /d "%~dp0"
-          inspection-client.exe --output report.json
-          pause
-          "@ | Out-File -Encoding utf8 "$dist/start_json.bat"
-          @"
-          @echo off
-          cd /d "%~dp0"
-          inspection-client.exe --output report.txt
-          pause
-          "@ | Out-File -Encoding utf8 "$dist/start_txt.bat"
-          $winDist = "dist/inspection-client-windows"
+          # 使用 --no-patch-required 模式，确保生成的客户端 exe 在未安装 KB3063858/KB2533623 补丁的
+          # Windows Server 2008 R2 / Win7 上也能直接运行
+          python scripts/build_client_windows.py --no-patch-required
+          $dist = "client/dist/inspection-client"
+          $winDist = "client/dist/inspection-client-windows"
           New-Item -ItemType Directory -Force -Path $winDist
           Copy-Item -Path "$dist/*" -Destination $winDist -Recurse -Force
-          Compress-Archive -Path "$winDist/*" -DestinationPath "dist/inspection-client-windows.zip" -Force
+          Compress-Archive -Path "$winDist/*" -DestinationPath "client/dist/inspection-client-windows.zip" -Force
         shell: pwsh
 
       - name: Upload Windows client artifact
