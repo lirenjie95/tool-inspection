@@ -204,7 +204,8 @@ Inspection Summary
 
 ### Step 4: Package the Client as a Windows Executable (Optional)
 
-If the management machine does not have Python, you can package the client as a standalone exe:
+If the management machine does not have Python, you can package the client as a standalone exe.
+By default, the client targets **Windows Server 2008 R2 / Windows 7** and requires the build machine to use **Python 3.8.x**.
 
 ```bash
 pip install pyinstaller
@@ -221,8 +222,16 @@ After packaging, the output is located at `client/dist/inspection-client/` and c
 Deployment: copy the entire `client/dist/inspection-client/` folder to the target Windows management machine,
 edit `config.json`, and double-click `start.bat` to run.
 
+> If the current Python version is higher than 3.8.x, the script will report an error and explain why.
+> For Windows 8.1+ / Server 2012+, use `python scripts/build_client_windows.py --target modern`.
+> **If the target management machine cannot install system patches (such as KB3063858) but must remain on Win7/2008 R2, use:**
+> ```bash
+> python scripts/build_client_windows.py --no-patch-required
+> ```
+> This mode automatically downloads the Python 3.7 embedded runtime for packaging; the resulting exe can run directly on unpatched legacy systems.
+>
 > CI/CD is also supported: pushing a `v*` tag automatically builds `inspection-client-windows.zip`
-> and uploads it to the GitHub Release.
+> using `--no-patch-required`, and uploads it to the GitHub Release.
 
 ## Extension Guide
 
@@ -361,7 +370,7 @@ All command-line tools in this project default to **Chinese** output and can be 
 | Agent startup error | Confirm Python version >= 3.7; confirm the `services/` folder exists in the current directory |
 | Disk data empty | Confirm PowerShell can run normally; confirm local disks exist |
 | Web page check failed | Confirm the URL is correct; confirm the local network can access the target web page |
-| Startup error `_socket: parameter error` | Legacy systems (Win7/2008 R2) are missing the KB3063858 patch; if the patch cannot be installed, repackage using `--no-patch-required` mode |
+| Startup error `_socket: parameter error` | Legacy systems (Win7/2008 R2) are missing the KB3063858 patch; if the patch cannot be installed, repackage the Agent or client using `--no-patch-required` mode |
 
 ## Security Recommendations
 

@@ -202,7 +202,8 @@ python main.py --lang en
 
 ### 第四步：打包客户端为 Windows 可执行程序（可选）
 
-如果管理机没有 Python 环境，可将客户端打包为独立 exe：
+如果管理机没有 Python 环境，可将客户端打包为独立 exe。
+客户端默认目标平台为 **Windows Server 2008 R2 / Windows 7**，要求打包环境使用 **Python 3.8.x**。
 
 ```bash
 pip install pyinstaller
@@ -219,7 +220,15 @@ python scripts/build_client_windows.py
 部署方式：将 `client/dist/inspection-client/` **整个文件夹**复制到目标 Windows 管理机，
 编辑 `config.json` 后双击 `start.bat` 即可运行。
 
-> CI/CD 已同步支持：推送 `v*` 标签时会自动构建 `inspection-client-windows.zip`
+> 如果当前 Python 版本高于 3.8.x，脚本会报错并说明原因。
+> 如需面向 Windows 8.1+ / Server 2012+，请使用 `python scripts/build_client_windows.py --target modern`。
+> **如果目标管理机无法安装系统补丁（如 KB3063858）但必须留在 Win7/2008 R2，请使用：**
+> ```bash
+> python scripts/build_client_windows.py --no-patch-required
+> ```
+> 该模式会自动下载 Python 3.7 嵌入式运行时进行打包，生成的 exe 可在未打补丁的老系统上直接运行。
+>
+> CI/CD 已同步支持：推送 `v*` 标签时会使用 `--no-patch-required` 自动构建 `inspection-client-windows.zip`
 > 并上传到 GitHub Release。
 
 ## 扩展指南
@@ -359,7 +368,7 @@ python -m coverage report --include="server/*,client/*" -m
 | Agent 启动报错 | 确认 Python 版本 >= 3.7；确认当前目录下有 `services/` 文件夹 |
 | 磁盘数据为空 | 确认 PowerShell 可正常执行；确认存在本地磁盘 |
 | 网页检测失败 | 确认 URL 正确；确认本地网络可访问目标网页 |
-| 启动报 `_socket: 参数错误` | 老系统（Win7/2008 R2）缺少 KB3063858 补丁；如无法安装补丁，请用 `--no-patch-required` 模式重新打包 |
+| 启动报 `_socket: 参数错误` | 老系统（Win7/2008 R2）缺少 KB3063858 补丁；如无法安装补丁，请用 `--no-patch-required` 模式重新打包 Agent 或客户端 |
 
 ## 安全建议
 
