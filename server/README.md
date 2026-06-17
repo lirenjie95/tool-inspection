@@ -166,7 +166,9 @@ pip install pyinstaller
 python scripts/build_windows.py
 ```
 
-Copy the entire `server/dist/inspection-agent/` folder to the target server:
+Copy the entire `server/dist/inspection-agent/` folder to the target server.
+The root only contains `inspection-agent.exe`, `start.bat`, and `start_hidden.vbs`;
+all other files are inside `_internal/`, including `scripts/check_prereqs.ps1`.
 
 ```cmd
 cd inspection-agent

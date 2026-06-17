@@ -94,7 +94,7 @@ By default, this project targets **Windows Server 2008 R2 Enterprise** and requi
    ```
 2. Copy the entire `server/dist/inspection-agent/` folder to the target server.
    The folder root contains only `inspection-agent.exe`, `start.bat`, and `start_hidden.vbs`;
-   dependencies are in `_internal/` and the pre-deployment check script is in `scripts/`.
+   all other files (dependencies and `scripts/check_prereqs.ps1`) are inside `_internal/`.
 3. Run `inspection-agent.exe --port 5000`, or double-click `start.bat` (foreground) / `start_hidden.vbs` (background, silent).
 
 > If the current Python version is higher than 3.8.x, the script will report an error and explain why.
@@ -220,7 +220,7 @@ After packaging, the output is located at `client/dist/inspection-client/` and c
 - `start_txt.bat` — Run and output a text report
 
 Deployment: copy the entire `client/dist/inspection-client/` folder to the target Windows management machine,
-edit `config.json`, and double-click `start.bat` to run.
+edit `config.json`, and double-click `start.bat` to run. All dependencies stay inside `_internal/`.
 
 > If the current Python version is higher than 3.8.x, the script will report an error and explain why.
 > For Windows 8.1+ / Server 2012+, use `python scripts/build_client_windows.py --target modern`.

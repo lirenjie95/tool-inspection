@@ -164,7 +164,9 @@ pip install pyinstaller
 python scripts/build_windows.py
 ```
 
-将 `server/dist/inspection-agent/` 整个文件夹复制到目标服务器：
+将 `server/dist/inspection-agent/` 整个文件夹复制到目标服务器。
+根目录只包含 `inspection-agent.exe`、`start.bat`、`start_hidden.vbs`；
+其他所有文件（包括 `scripts/check_prereqs.ps1`）都在 `_internal/` 内。
 
 ```cmd
 cd inspection-agent

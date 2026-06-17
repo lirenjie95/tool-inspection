@@ -92,7 +92,7 @@
    ```
 2. 将 `server/dist/inspection-agent/` 整个文件夹复制到目标服务器。
    文件夹根目录只包含 `inspection-agent.exe`、`start.bat`、`start_hidden.vbs`；
-   依赖放在 `_internal/`，部署前检查脚本放在 `scripts/`。
+   其他所有文件（依赖与 `scripts/check_prereqs.ps1`）都放在 `_internal/` 内。
 3. 运行 `inspection-agent.exe --port 5000`，或双击 `start.bat`（前台）/ `start_hidden.vbs`（后台静默）
 
 > 如果当前 Python 版本高于 3.8.x，脚本会报错并提示原因。
