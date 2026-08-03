@@ -216,14 +216,15 @@ python scripts/build_client_windows.py
 ```
 
 打包完成后，输出位于 `client/dist/inspection-client/`，包含：
-- `inspection-client.exe` — 客户端主程序
+- `inspection-client.exe` — 客户端主程序（单文件，依赖已全部内置）
 - `config.json` — 默认配置文件（可直接修改）
 - `start.bat` — 前台运行脚本
 - `start_json.bat` — 运行并输出 JSON 报告
 - `start_txt.bat` — 运行并输出文本报告
 
 部署方式：将 `client/dist/inspection-client/` 整个文件夹复制到目标 Windows 管理 机，
-编辑 `config.json` 后双击 `start.bat` 即可运行。
+编辑 `config.json` 后双击 `start.bat` 即可运行。exe 本身是自包含的，应急时只复制
+`inspection-client.exe` 并在旁边放一份 `config.json` 也能运行。
 
 > 如果当前 Python 版本高于 3.8.x，脚本会报错并说明原因。
 > 如需面向 Windows 8.1+ / Server 2012+，请使用 `python scripts/build_client_windows.py --target modern`。
@@ -235,6 +236,9 @@ python scripts/build_client_windows.py
 >
 > CI/CD 已同步支持：推送 `v*` 标签时会使用 `--no-patch-required` 自动构建 `inspection-client-windows.zip`
 > 并上传到 GitHub Release。
+>
+> 哪些 Release 能在 Windows 7 / Server 2008 R2 上运行（以及单文件 exe 无法启动时的 v0.3.2
+> 回退方案），请参见 [client/README_zh.md](client/README_zh.md#第一部分使用打包好的-release)。
 
 ## 扩展指南
 
