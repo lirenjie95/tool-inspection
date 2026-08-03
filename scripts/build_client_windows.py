@@ -31,8 +31,9 @@ Therefore the default packaging environment is Python 3.8.x to avoid generating 
                                                                  # Also works on unpatched Win7/2008 R2
 
 输出 / Output:
-    client/dist/inspection-client/  (文件夹，根目录仅保留 exe / bat / vbs)
-    client/dist/inspection-client/  (directory; root keeps only exe / bat / vbs)
+    client/dist/inspection-client/  (文件夹，exe 为单文件，依赖与默认配置已内置)
+    client/dist/inspection-client/  (directory; the exe is a single file with
+                                     dependencies and the default config bundled)
 """
 
 import argparse
@@ -107,7 +108,7 @@ TRANSLATIONS = {
         "packaging_successful": "打包成功!",
         "output_directory": "输出目录: {dist_dir}",
         "deployment_instructions": "部署方式:",
-        "step1_copy_folder": "1. 将上述文件夹整体复制到目标 Windows 管理机",
+        "step1_copy_folder": "1. 将上述文件夹整体复制到目标 Windows 管理机（客户端为单文件 exe，依赖已内置）",
         "step2_edit_config": "2. 编辑 config.json，填入实际服务器 Agent 地址",
         "step3_run_methods": "3. 运行方式:",
         "run_foreground": "   - 前台运行: 双击 start.bat",
@@ -166,7 +167,7 @@ TRANSLATIONS = {
         "packaging_successful": "Packaging successful!",
         "output_directory": "Output directory: {dist_dir}",
         "deployment_instructions": "Deployment instructions:",
-        "step1_copy_folder": "1. Copy the entire folder to the target Windows management machine",
+        "step1_copy_folder": "1. Copy the entire folder to the target Windows management machine (the client is a single-file exe with all dependencies bundled)",
         "step2_edit_config": "2. Edit config.json with actual server Agent addresses",
         "step3_run_methods": "3. How to run:",
         "run_foreground": "   - Foreground: double-click start.bat",
@@ -291,14 +292,16 @@ def main():
     clean_build(client_dir)
 
     # 打包
-    # --onedir 模式，依赖文件统一放在 _internal/ 子目录
+    # --onefile 模式，全部依赖与默认配置打进单个 exe，目标机复制 exe 即可运行
     # Package
-    # --onedir mode, dependencies go to _internal/ subdirectory
+    # --onefile mode: all dependencies and the default config are bundled into
+    # a single exe, so only the exe needs to be copied to the target machine
     cmd = [
         python_exe, "-m", "PyInstaller",
         "--name", "inspection-client",
-        "--onedir",
+        "--onefile",
         "--console",
+        "--add-data", os.path.join(client_dir, "config.json") + os.pathsep + ".",
         "--workpath", os.path.join(client_dir, "build"),
         "--distpath", os.path.join(client_dir, "dist"),
         "--specpath", client_dir,
@@ -311,7 +314,16 @@ def main():
         print(t("packaging_failed"))
         sys.exit(1)
 
+    # onefile 模式产物为 dist/inspection-client.exe，统一收进 dist/inspection-client/ 目录，
+    # 与 config.json / README / bat 一起组成发布包
+    # The onefile artifact is dist/inspection-client.exe; move it into
+    # dist/inspection-client/ so it ships together with config.json / README / bat files
     dist_dir = os.path.join(client_dir, "dist", "inspection-client")
+    os.makedirs(dist_dir, exist_ok=True)
+    shutil.move(
+        os.path.join(client_dir, "dist", "inspection-client.exe"),
+        os.path.join(dist_dir, "inspection-client.exe"),
+    )
 
     # 复制默认配置文件到输出目录根，与 exe / bat / vbs 同级
     # Copy the default config file to the output root, alongside exe / bat / vbs

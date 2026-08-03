@@ -218,14 +218,15 @@ python scripts/build_client_windows.py
 ```
 
 After packaging, the output is located at `client/dist/inspection-client/` and contains:
-- `inspection-client.exe` — Client main program
+- `inspection-client.exe` — Client main program (single file, all dependencies bundled)
 - `config.json` — Default configuration file (edit directly)
 - `start.bat` — Foreground run script
 - `start_json.bat` — Run and output a JSON report
 - `start_txt.bat` — Run and output a text report
 
 Deployment: copy the entire `client/dist/inspection-client/` folder to the target Windows management machine,
-edit `config.json`, and double-click `start.bat` to run. All dependencies stay inside `_internal/`.
+edit `config.json`, and double-click `start.bat` to run. The exe is self-contained — in a pinch you can copy
+just `inspection-client.exe` and a `config.json` next to it.
 
 > If the current Python version is higher than 3.8.x, the script will report an error and explain why.
 > For Windows 8.1+ / Server 2012+, use `python scripts/build_client_windows.py --target modern`.
@@ -237,6 +238,9 @@ edit `config.json`, and double-click `start.bat` to run. All dependencies stay i
 >
 > CI/CD is also supported: pushing a `v*` tag automatically builds `inspection-client-windows.zip`
 > using `--no-patch-required`, and uploads it to the GitHub Release.
+>
+> For which releases run on Windows 7 / Server 2008 R2 (and the v0.3.2 fallback if the
+> single-file exe fails), see [client/README.md](client/README.md#part-1-use-the-packaged-release).
 
 ## Extension Guide
 

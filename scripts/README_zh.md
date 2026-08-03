@@ -134,12 +134,11 @@ python scripts/build_client_windows.py --no-patch-required
 因此生成的客户端 exe 可在未打补丁的老系统上直接运行。
 
 打包完成后，输出位于 `client/dist/inspection-client/`，包含：
-- `inspection-client.exe` — 客户端主程序
+- `inspection-client.exe` — 客户端主程序（单文件，依赖与默认配置已内置）
 - `config.json` — 默认配置文件（可直接修改）
 - `start.bat` — 前台运行脚本
 - `start_json.bat` — 运行并输出 JSON 报告
 - `start_txt.bat` — 运行并输出文本报告
-- `_internal/` — 运行时依赖
 
 ### 部署
 
@@ -201,7 +200,8 @@ PyInstaller 打包的 Linux 可执行文件依赖构建时的 glibc 版本，
 ## 常见问题
 
 **Q: 打包后的程序无法运行，提示缺少 DLL/so？**
-A: 默认 `--onedir` 模式已把所有依赖放在 `_internal/` 文件夹中，请确保复制的是**整个文件夹**而不是单个 exe 文件。
+A: 服务器 Agent 使用 `--onedir` 模式，所有依赖放在 `_internal/` 文件夹中，请确保复制的是**整个文件夹**而不是单个 exe 文件。
+   （Windows 客户端已改为单文件 exe，没有 `_internal/` 文件夹。）
 
 **Q: 运行时报 `ImportError: DLL load failed while importing _socket: 参数错误`？**
 A: 这是 Windows Server 2008 R2 / Win7 缺少 [KB3063858](https://support.microsoft.com/kb/3063858) 补丁的典型表现。
@@ -229,5 +229,6 @@ A: 请检查打包时使用的 Python 版本。WS2008 非 R2 最高支持 Python
 - **Linux 打包**：`OUTPUT_LANG=en bash scripts/build_linux.sh`
 
 **Q: 能否打包成单文件（--onefile）？**
-A: 可以，但默认使用 `--onedir`（启动更快、兼容性更好）。如需单文件，
-   修改脚本中的 `--onedir` 为 `--onefile` 即可。
+A: Windows 客户端已经使用 `--onefile` 打包（单文件 exe，无 `_internal/` 文件夹）。
+   服务器 Agent 仍默认 `--onedir`（启动更快、便于排查问题），如需单文件，
+   修改 `build_windows.py` 中的 `--onedir` 为 `--onefile` 即可。

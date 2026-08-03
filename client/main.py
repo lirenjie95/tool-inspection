@@ -124,6 +124,17 @@ def load_config(path: str = "config.json"):
 def _load_default_config():
     """加载默认配置文件（用于 run_inspection 无参调用时）
     / Load the default config file (used when run_inspection is called without arguments)."""
+    if getattr(sys, "frozen", False):
+        # 打包运行：优先使用 exe 旁用户可修改的 config.json，其次 exe 内置的默认配置
+        # Frozen run: prefer the user-editable config.json next to the exe,
+        # then the default config bundled inside the exe
+        candidates = [os.path.join(os.path.dirname(sys.executable), "config.json")]
+        meipass = getattr(sys, "_MEIPASS", None)
+        if meipass:
+            candidates.append(os.path.join(meipass, "config.json"))
+        for path in candidates:
+            if os.path.isfile(path):
+                return load_config(path)
     return load_config(os.path.join(os.path.dirname(__file__), "config.json"))
 
 

@@ -136,12 +136,11 @@ This mode uses the same Python 3.7 embedded runtime as the server build (see [Se
 so the resulting client exe can run directly on unpatched legacy systems.
 
 After packaging, the output is located at `client/dist/inspection-client/` and contains:
-- `inspection-client.exe` — Client main program
+- `inspection-client.exe` — Client main program (single file, all dependencies and the default config bundled)
 - `config.json` — Default configuration file (edit directly)
 - `start.bat` — Foreground run script
 - `start_json.bat` — Run and output a JSON report
 - `start_txt.bat` — Run and output a text report
-- `_internal/` — Runtime dependencies
 
 ### Deployment
 
@@ -203,7 +202,8 @@ For example:
 ## FAQ
 
 **Q: The packaged program fails to run, reporting missing DLL/so files?**
-A: The default `--onedir` mode includes all dependencies in the `_internal/` folder. Make sure you copied the **entire folder**, not just a single exe file.
+A: The server Agent uses `--onedir` mode and includes all dependencies in the `_internal/` folder. Make sure you copied the **entire folder**, not just a single exe file.
+   (The Windows client is packaged as a single-file exe and has no `_internal/` folder.)
 
 **Q: It reports `ImportError: DLL load failed while importing _socket: parameter error` at runtime?**
 A: This is the typical symptom of Windows Server 2008 R2 / Win7 missing the [KB3063858](https://support.microsoft.com/kb/3063858) patch.
@@ -231,5 +231,6 @@ All packaging scripts default to Chinese output and support English.
 - **Linux Agent**: `OUTPUT_LANG=en bash scripts/build_linux.sh`
 
 **Q: Can it be packaged as a single file (--onefile)?**
-A: Yes, but the default is `--onedir` for better compatibility and faster startup. If you prefer a single executable,
-   change `--onedir` to `--onefile` in the script.
+A: The Windows client is already packaged with `--onefile` (single exe, no `_internal/` folder).
+   The server Agent keeps the `--onedir` default for faster startup and easier troubleshooting;
+   if you prefer a single executable there, change `--onedir` to `--onefile` in `build_windows.py`.

@@ -4,7 +4,7 @@
 
 本文件夹包含本地巡检客户端。它通过 HTTP 向各服务器的 Agent 发起查询，并汇总输出巡检报告。
 
-> **源码运行 vs 打包运行：** 本文档同时说明从 `client/` 源码文件夹运行，以及运行打包后的可执行文件两种方式。使用 CI Release 包时，根目录包含 `inspection-client.exe`、`config.json`、`start*.bat` 辅助脚本，运行时依赖位于 `_internal/` 下。
+> **源码运行 vs 打包运行：** 本文档同时说明从 `client/` 源码文件夹运行，以及运行打包后的可执行文件两种方式。使用 CI Release 包时，根目录包含单文件 `inspection-client.exe`（依赖已全部内置）、`config.json`、`start*.bat` 辅助脚本。
 
 ## 文件说明
 
@@ -16,12 +16,19 @@
 
 下载 Release 包（例如 GitHub Releases 中的 `inspection-client-windows.zip`）并解压。包根目录包含：
 
-- `inspection-client.exe`
+- `inspection-client.exe` — 单文件可执行程序，运行时依赖已全部内置
 - `config.json`
 - `start.bat` — 前台运行，默认文本输出
 - `start_json.bat` — 输出 JSON 报告到 `report.json`
 - `start_txt.bat` — 输出文本报告到 `report.txt`
-- `_internal/` — 运行时依赖
+
+> **Windows 7 / Server 2008 R2 的 Release 兼容性：**
+> - `v0.3.0` — **不可用**（用 Python 3.11 打包，会报缺少 `api-ms-win-core-path-l1-1-0.dll`)
+> - `v0.3.1` / `v0.3.2` — 可用（基于 Python 3.7 运行时的多文件包）
+> - `v0.3.3+` — 可用（基于 Python 3.7 运行时的单文件 exe)
+>
+> 如果 `v0.3.3+` 的单文件 exe 在你的 Win7 机器上无法启动，请改为下载
+> [`v0.3.2`](https://github.com/lirenjie95/tool-inspection/releases/tag/v0.3.2)——它的多文件包对老系统兼容性最好。
 
 步骤：
 
