@@ -43,7 +43,7 @@
    sudo systemctl status inspection-agent
    ```
 
-> **兼容性提示**：PyInstaller 打包的 Linux 可执行文件依赖构建时的 glibc 版本，建议在目标系统相同或更旧的系统上打包，以确保兼容性。详见 `../scripts/README.md`。
+> **兼容性提示**：预编译的 `inspection-agent-linux` 发布包基于 Ubuntu 22.04 构建，要求 **glibc ≥ 2.35**（如 Ubuntu 22.04+、Debian 12+、CentOS Stream 9+ 等）。PyInstaller 打包的 Linux 可执行文件依赖构建时的 glibc 版本，在更旧的系统（如 Ubuntu 20.04、CentOS 7）上请改为从源码自行打包，详见 `../scripts/README.md`。
 
 ## 第二部分：从 Python 源码运行
 
