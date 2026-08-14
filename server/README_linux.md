@@ -6,6 +6,35 @@ This is the Agent program that runs on **each Linux server being inspected**. It
 
 > **Source vs. Packaged:** This README describes both running from the `server/` source folder and running a packaged executable. When using a CI release package, the root contains the `inspection-agent` ELF executable, helper script `start.sh`, systemd service template, and runtime dependencies under `_internal/`.
 
+## Quickstart
+
+Get the Agent running with the prebuilt package (requires glibc ≥ 2.35, e.g. Ubuntu 22.04+):
+
+```bash
+tar -xzf inspection-agent-linux.tar.gz
+cd inspection-agent-linux
+chmod +x start.sh
+./start.sh --port 5000
+```
+
+Verify it is up:
+
+```bash
+curl http://localhost:5000/ping   # {"status": "ok"}
+```
+
+For long-term operation, register it as a systemd service so it restarts automatically after a reboot:
+
+```bash
+sudo cp scripts/inspection-agent.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now inspection-agent
+```
+
+> The bundled service template assumes the Agent is installed at `/opt/inspection-agent`; if you extracted it elsewhere, update `WorkingDirectory` and `ExecStart` in the service file first.
+
+Done — the Agent is now ready for the inspection client to query. For firewall rules, running from source, and the API reference, see the full guide below.
+
 ## Files
 
 - `agent.py` — HTTP service entry point (no modification needed)

@@ -6,6 +6,27 @@
 
 > **源码运行 vs 打包运行：** 本文档同时说明从 `client/` 源码文件夹运行，以及运行打包后的可执行文件两种方式。使用 CI Release 包时，根目录包含单文件 `inspection-client.exe`（依赖已全部内置）、`config.json`、`start*.bat` 辅助脚本。
 
+## 快速上手
+
+> 前提：每台目标服务器上已运行 Agent（见 `../server/README_windows.md` / `../server/README_linux.md`）。
+
+1. 在管理机上解压 `inspection-client-windows.zip`。
+2. 编辑 `config.json`，填入你的服务器（最小示例）：
+
+   ```json
+   {
+     "SERVERS": [
+       {"role": "app", "ip": "192.168.1.10", "port": 5000, "name": "应用服务器-01"}
+     ],
+     "WEBS": [],
+     "DISK_THRESHOLD_GB": 30
+   }
+   ```
+
+3. 双击 `start.bat` —— 巡检报告会打印到控制台；使用 `start_json.bat` / `start_txt.bat` 可将报告保存为文件。
+
+所有命令行选项和输出格式请见下文完整指南。
+
 ## 文件说明
 
 - `main.py` — 客户端主入口

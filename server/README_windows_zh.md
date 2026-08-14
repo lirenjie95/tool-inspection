@@ -6,6 +6,27 @@
 
 > **源码运行 vs 打包运行：** 本文档同时说明从 `server/` 源码文件夹运行，以及运行打包后的可执行文件两种方式。使用 CI Release 包时，根目录包含 `inspection-agent.exe`、辅助启动脚本（`start.bat`、`start_hidden.vbs` 等），运行时依赖位于 `_internal/` 下。
 
+## 快速上手
+
+1. 在目标服务器上解压 `inspection-agent-windows.zip`。
+2. 双击 `start.bat`（前台运行）或 `start_hidden.vbs`（后台静默运行，无黑窗口）。
+3. 验证已启动：
+
+   ```powershell
+   Invoke-RestMethod -Uri "http://localhost:5000/ping"   # {"status": "ok"}
+   ```
+
+`start_hidden.vbs` 只是本次开机期间的后台静默运行，服务器重启后不会自动恢复。如需像 Linux 的 systemd 一样开机自启，可用 [nssm](https://nssm.cc/) 注册为 Windows 服务：
+
+```cmd
+nssm install InspectionAgent "C:\path\to\inspection-agent.exe" --port 5000
+nssm start InspectionAgent
+```
+
+注册后每次开机自动启动；后续可用 `nssm stop|restart|remove InspectionAgent` 或 `services.msc` 管理。
+
+完成 —— Agent 已就绪，等待巡检客户端查询。防火墙规则、源码运行及 API 说明请见下文完整指南。
+
 ## 文件说明
 
 - `agent.py` — HTTP 服务入口（无需修改）

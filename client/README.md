@@ -6,6 +6,27 @@ This folder contains the local inspection client. It queries each server's Agent
 
 > **Source vs. Packaged:** This README describes both running from the `client/` source folder and running a packaged executable. When using a CI release package, the root contains a single-file `inspection-client.exe` (all dependencies bundled), `config.json`, and helper `start*.bat` scripts.
 
+## Quickstart
+
+> Prerequisite: the Agent is already running on each target server (see `../server/README_windows.md` / `../server/README_linux.md`).
+
+1. Extract `inspection-client-windows.zip` on the management machine.
+2. Edit `config.json` and fill in your servers (minimal example):
+
+   ```json
+   {
+     "SERVERS": [
+       {"role": "app", "ip": "192.168.1.10", "port": 5000, "name": "App Server 01"}
+     ],
+     "WEBS": [],
+     "DISK_THRESHOLD_GB": 30
+   }
+   ```
+
+3. Double-click `start.bat` — the inspection report prints to the console. Use `start_json.bat` / `start_txt.bat` to save the report to a file.
+
+For all command-line options and output formats, see the full guide below.
+
 ## Files
 
 - `main.py` — Client entry point

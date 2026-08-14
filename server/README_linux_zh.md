@@ -6,6 +6,35 @@
 
 > **源码运行 vs 打包运行：** 本文档同时说明从 `server/` 源码文件夹运行，以及运行打包后的可执行文件两种方式。使用 CI Release 包时，根目录包含 `inspection-agent` ELF 可执行文件、辅助脚本 `start.sh`、systemd 服务模板，运行时依赖位于 `_internal/` 下。
 
+## 快速上手
+
+使用预编译包，一分钟内启动 Agent（要求 glibc ≥ 2.35，如 Ubuntu 22.04+）：
+
+```bash
+tar -xzf inspection-agent-linux.tar.gz
+cd inspection-agent-linux
+chmod +x start.sh
+./start.sh --port 5000
+```
+
+验证已启动：
+
+```bash
+curl http://localhost:5000/ping   # {"status": "ok"}
+```
+
+如需长期稳定运行，可注册为 systemd 服务，服务器重启后自动拉起：
+
+```bash
+sudo cp scripts/inspection-agent.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now inspection-agent
+```
+
+> 自带的 service 模板默认安装路径为 `/opt/inspection-agent`；如解压到其他目录，请先修改 service 文件中的 `WorkingDirectory` 和 `ExecStart`。
+
+完成 —— Agent 已就绪，等待巡检客户端查询。防火墙规则、源码运行及 API 说明请见下文完整指南。
+
 ## 文件说明
 
 - `agent.py` — HTTP 服务入口（无需修改）
