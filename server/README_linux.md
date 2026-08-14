@@ -43,7 +43,7 @@ Steps:
    sudo systemctl status inspection-agent
    ```
 
-> **Compatibility Tip**: PyInstaller-packaged Linux executables depend on the glibc version used at build time. Build on a system that is the same age as or older than the target system to ensure compatibility. See `../scripts/README.md` for details.
+> **Compatibility Tip**: The prebuilt `inspection-agent-linux` release is built on Ubuntu 22.04 and requires **glibc ≥ 2.35** (Ubuntu 22.04+, Debian 12+, CentOS Stream 9+, etc.). PyInstaller-packaged Linux executables depend on the glibc version used at build time, so on older systems (e.g. Ubuntu 20.04, CentOS 7), build from source instead — see `../scripts/README.md` for details.
 
 ## Part 2: Run from Python Source
 
