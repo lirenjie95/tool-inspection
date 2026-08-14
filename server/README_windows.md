@@ -6,6 +6,27 @@ This is the Agent program that runs on **each Windows server being inspected**. 
 
 > **Source vs. Packaged:** This README describes both running from the `server/` source folder and running a packaged executable. When using a CI release package, the root contains `inspection-agent.exe`, helper scripts (`start.bat`, `start_hidden.vbs`), and runtime dependencies under `_internal/`.
 
+## Quickstart
+
+1. Extract `inspection-agent-windows.zip` on the target server.
+2. Double-click `start.bat` (foreground) or `start_hidden.vbs` (background, no console window).
+3. Verify it is up:
+
+   ```powershell
+   Invoke-RestMethod -Uri "http://localhost:5000/ping"   # {"status": "ok"}
+   ```
+
+`start_hidden.vbs` keeps the Agent running silently only until the server reboots. To auto-start on every boot (the equivalent of a systemd service on Linux), register it as a Windows service with [nssm](https://nssm.cc/):
+
+```cmd
+nssm install InspectionAgent "C:\path\to\inspection-agent.exe" --port 5000
+nssm start InspectionAgent
+```
+
+The service starts automatically on boot; manage it later with `nssm stop|restart|remove InspectionAgent` or `services.msc`.
+
+Done — the Agent is now ready for the inspection client to query. For firewall rules, running from source, and the API reference, see the full guide below.
+
 ## Files
 
 - `agent.py` — HTTP service entry point (no modification needed)
