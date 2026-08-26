@@ -66,6 +66,7 @@ def _collect_windows(lang: str = DEFAULT_LANG):
         ["powershell", "-Command", ps_cmd],
         capture_output=True,
         text=True,
+        timeout=8,
     )
     if result.returncode != 0:
         raise RuntimeError(t("powershell_failed", lang, error=result.stderr))

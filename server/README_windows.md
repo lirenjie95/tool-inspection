@@ -114,6 +114,12 @@ Make sure the local server firewall allows inbound connections to the Agent port
 New-NetFirewallRule -DisplayName "InspectionAgent" -Direction Inbound -Protocol TCP -LocalPort 5000 -Action Allow
 ```
 
+## Antivirus / EDR Notes
+
+`/health` collects CPU, memory, and disk data by spawning `powershell.exe` child processes, which may trigger antivirus/EDR behavior-monitoring alerts. The Agent has built-in safeguards: each PowerShell call has an 8-second timeout, after which that collector degrades to an `{"error": ...}` response, and the server is multi-threaded so one slow request does not block the others.
+
+> Clicking "Ignore" only allows that single prompt — the monitoring hook stays active and can still slow down every collection. Add a proper **exclusion/allowlist** rule for the Agent's `python.exe` (or the packaged `inspection-agent.exe`) in your antivirus instead.
+
 ## Run in the Background (Optional)
 
 **Option A: Wrap as a Windows Service with nssm (Recommended)**
