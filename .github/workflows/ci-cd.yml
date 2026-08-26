@@ -2,10 +2,10 @@ name: CI/CD
 
 on:
   push:
-    branches: [master, slave]
+    branches: [master]
     tags: ["v*"]
   pull_request:
-    branches: [master, slave]
+    branches: [master]
 
 jobs:
   lint:
