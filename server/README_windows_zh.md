@@ -114,6 +114,12 @@ Invoke-RestMethod -Uri "http://localhost:5000/health"
 New-NetFirewallRule -DisplayName "InspectionAgent" -Direction Inbound -Protocol TCP -LocalPort 5000 -Action Allow
 ```
 
+## 杀毒软件 / EDR 注意事项
+
+`/health` 的 CPU、内存、磁盘采集通过拉起 `powershell.exe` 子进程完成，可能触发杀毒软件/EDR 的行为监控弹窗。Agent 已内置防护：每个 PowerShell 调用有 8 秒超时，超时后该采集项降级为 `{"error": ...}` 返回，且服务采用多线程模型，单个慢请求不会阻塞其他请求。
+
+> 点击“忽略”只放行本次，监控钩子仍在，仍可能拖慢每次采集。建议在杀毒软件中为 Agent 的 `python.exe`（或打包后的 `inspection-agent.exe`）添加正式**排除/白名单**规则。
+
 ## Windows 后台运行（可选）
 
 **方式 A：nssm 封装为 Windows 服务（推荐）**
