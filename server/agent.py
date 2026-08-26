@@ -34,7 +34,7 @@ import argparse
 import json
 import logging
 import platform
-from http.server import HTTPServer, BaseHTTPRequestHandler
+from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 
 from services.disk import collect as collect_disk
 from services.cpu import collect as collect_cpu
@@ -183,7 +183,10 @@ class HealthHandler(BaseHTTPRequestHandler):
 
 
 def run_server(port):
-    server = HTTPServer(("0.0.0.0", port), HealthHandler)
+    # 使用多线程服务器，避免单个慢请求（如被杀毒软件拦截的采集）阻塞所有其他请求
+    # Use a threading server so one slow request (e.g. a collection blocked
+    # by antivirus) does not stall all other requests.
+    server = ThreadingHTTPServer(("0.0.0.0", port), HealthHandler)
     logger.info(t("agent_started", url=f"http://0.0.0.0:{port}/health"))
     logger.info(t("press_ctrl_c_to_stop"))
     try:

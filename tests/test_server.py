@@ -15,6 +15,7 @@ from unittest.mock import patch, MagicMock
 # Add the server directory to the path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "server"))
 
+import agent
 from services.disk import collect as collect_disk
 from services.cpu import collect as collect_cpu
 from services.memory import collect as collect_memory
@@ -116,6 +117,18 @@ class TestDiskService(unittest.TestCase):
                 with self.assertRaises(RuntimeError):
                     collect_disk()
 
+    def test_collect_windows_has_timeout(self):
+        """测试 Windows 磁盘采集为 subprocess.run 设置超时，防止被杀毒软件挂起
+
+        Test Windows disk collection sets a timeout on subprocess.run
+        so antivirus hooks cannot hang the request indefinitely.
+        """
+        with patch("platform.system", return_value="Windows"):
+            with patch("subprocess.run") as mock_run:
+                mock_run.return_value = MagicMock(returncode=0, stdout="C:,45,100\n", stderr="")
+                collect_disk()
+                self.assertIsNotNone(mock_run.call_args.kwargs.get("timeout"))
+
 
 class TestCPUService(unittest.TestCase):
     """测试 CPU 采集服务
@@ -155,6 +168,17 @@ class TestCPUService(unittest.TestCase):
                 self.assertIn("usage_percent", result)
                 self.assertEqual(result["usage_percent"], 25)
 
+    def test_collect_windows_has_timeout(self):
+        """测试 Windows CPU 采集为 subprocess.run 设置超时
+
+        Test Windows CPU collection sets a timeout on subprocess.run.
+        """
+        with patch("platform.system", return_value="Windows"):
+            with patch("subprocess.run") as mock_run:
+                mock_run.return_value = MagicMock(returncode=0, stdout="20\n", stderr="")
+                collect_cpu()
+                self.assertIsNotNone(mock_run.call_args.kwargs.get("timeout"))
+
 
 class TestMemoryService(unittest.TestCase):
     """测试内存采集服务
@@ -190,6 +214,17 @@ class TestMemoryService(unittest.TestCase):
                 self.assertIn("total_mb", result)
                 self.assertIn("free_mb", result)
                 self.assertIn("used_percent", result)
+
+    def test_collect_windows_has_timeout(self):
+        """测试 Windows 内存采集为 subprocess.run 设置超时
+
+        Test Windows memory collection sets a timeout on subprocess.run.
+        """
+        with patch("platform.system", return_value="Windows"):
+            with patch("subprocess.run") as mock_run:
+                mock_run.return_value = MagicMock(returncode=0, stdout="8388608,4194304\n", stderr="")
+                collect_memory()
+                self.assertIsNotNone(mock_run.call_args.kwargs.get("timeout"))
 
 
 class TestIISService(unittest.TestCase):
@@ -400,12 +435,32 @@ class TestRunServer(unittest.TestCase):
 
         Test KeyboardInterrupt correctly triggers shutdown.
         """
-        with patch("agent.HTTPServer") as mock_httpserver:
+        with patch("agent.ThreadingHTTPServer") as mock_httpserver:
             mock_server = MagicMock()
             mock_httpserver.return_value = mock_server
             mock_server.serve_forever.side_effect = KeyboardInterrupt()
             run_server(9999)
             mock_server.shutdown.assert_called_once()
+
+    def test_uses_threading_httpserver(self):
+        """测试 agent 使用 ThreadingHTTPServer，单个慢请求不阻塞其他请求
+
+        Test that agent uses ThreadingHTTPServer so one slow request
+        does not block all other requests.
+        """
+        self.assertTrue(hasattr(agent, "ThreadingHTTPServer"))
+
+    def test_run_server_creates_threading_server(self):
+        """测试 run_server 通过 ThreadingHTTPServer 创建服务器
+
+        Test run_server creates the server via ThreadingHTTPServer.
+        """
+        self.assertTrue(hasattr(agent, "ThreadingHTTPServer"))
+        with patch("agent.ThreadingHTTPServer") as mock_cls:
+            mock_server = MagicMock()
+            mock_cls.return_value = mock_server
+            run_server(9999)
+            mock_server.serve_forever.assert_called_once()
 
 
 if __name__ == "__main__":
