@@ -13,5 +13,5 @@
 
 - 运行测试 / Run tests: `python -m pytest tests/`
 - Lint: `flake8 client/ server/ scripts/ tests/ --max-line-length=250 --extend-ignore=E402`
-- CI（`.github/workflows/ci-cd.yml`）在 `master` / `slave` 的 push 和 PR 上运行，合并前必须通过。
-  CI runs on pushes and PRs to `master` / `slave` and must pass before merging.
+- CI（`.github/workflows/ci-cd.yml`）只在 `master` 的 push 和 PR 上运行（`slave` 不触发）；合入 `master` 前必须通过。
+  CI runs only on pushes and PRs to `master` (`slave` does not trigger CI); it must pass before merging into `master`.
