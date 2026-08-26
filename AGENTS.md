@@ -4,10 +4,12 @@
 
 - 主分支固定为 `master`，受分支保护，所有变更必须通过 PR 合入。
   The main branch is always `master`. It is protected; all changes must go through a PR.
-- 开发/集成分支固定为 `slave`。新功能或修复从 `slave` 检出分支，PR 一律以 `slave` 为 base。
-  The development/integration branch is always `slave`. Branch off `slave` for features and fixes, and target `slave` as the PR base.
-- 发布时通过 `slave` → `master` 的 PR 合入，CI 通过并合并后在 `master` 上打 tag（`vX.Y.Z`）。
-  To release, merge `slave` into `master` via PR; after CI passes and the merge completes, tag `master` (`vX.Y.Z`).
+- 开发分支固定为 `slave`。新开发从 `master` 检出 `slave` 分支；如果 `slave` 已被占用，则依次使用 `slave2`、`slave3` 等加标号的分支名。
+  The development branch is always `slave`. Check out `slave` from `master` for new work; if `slave` is already taken, use numbered names like `slave2`, `slave3`, etc.
+- 开发完毕后提 PR 到 `master`，CI 通过并合并后删除该 `slave` 分支。
+  When development is done, open a PR targeting `master`; after CI passes and the merge completes, delete the `slave` branch.
+- 是否打 tag 以及 tag 版本号（`vX.Y.Z`）根据本次修改的内容决定。
+  Whether to tag and which version number (`vX.Y.Z`) to use is decided based on the changes made.
 
 ## 测试与检查 / Tests & Checks
 
