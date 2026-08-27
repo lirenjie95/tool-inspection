@@ -1,6 +1,13 @@
 # Server Inspection Scripts (Agent-Client Architecture)
 
+[![CI/CD](https://github.com/lirenjie95/tool-inspection/actions/workflows/ci-cd.yml/badge.svg?branch=master)](https://github.com/lirenjie95/tool-inspection/actions/workflows/ci-cd.yml)
 [![codecov](https://codecov.io/gh/lirenjie95/tool-inspection/branch/master/graph/badge.svg)](https://codecov.io/gh/lirenjie95/tool-inspection)
+[![release](https://img.shields.io/github/v/release/lirenjie95/tool-inspection)](https://github.com/lirenjie95/tool-inspection/releases)
+[![downloads](https://img.shields.io/github/downloads/lirenjie95/tool-inspection/total)](https://github.com/lirenjie95/tool-inspection/releases)
+[![python](https://img.shields.io/badge/python-%3E%3D3.7-blue)](https://www.python.org/)
+[![platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux-blue)](#)
+[![lint](https://img.shields.io/badge/lint-flake8-blue)](#)
+[![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 [中文文档](README_zh.md)
 
