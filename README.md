@@ -1,5 +1,7 @@
 # Server Inspection Scripts (Agent-Client Architecture)
 
+[![codecov](https://codecov.io/gh/lirenjie95/tool-inspection/branch/master/graph/badge.svg)](https://codecov.io/gh/lirenjie95/tool-inspection)
+
 [中文文档](README_zh.md)
 
 A lightweight inspection tool for intranet Windows/Linux servers using an **Agent-Client** model,
@@ -353,6 +355,37 @@ python -m coverage report --include="server/*,client/*" -m
 
 > Tip: The HTTP Handler tests in `tests/test_server.py` start a real HTTP service on a temporary port;
 > no manual Agent startup is required.
+
+The CI workflow (`.github/workflows/ci-cd.yml`) runs the same coverage commands and **fails the
+build when line coverage or branch coverage drops below 50%**.
+
+### Codecov
+
+Coverage results from CI are uploaded to [Codecov](https://codecov.io/gh/lirenjie95/tool-inspection)
+via `codecov/codecov-action`, so you can track line/branch coverage trends and browse per-file
+coverage in the Codecov UI. The badge at the top of this file shows the coverage of the `master` branch.
+
+## Lint
+
+CI runs flake8 on every PR to `master`. Run it locally before pushing:
+
+```bash
+pip install flake8
+flake8 client/ server/ scripts/ tests/ --max-line-length=250 --extend-ignore=E402
+```
+
+## Development Workflow
+
+- The main branch is always `master`. It is protected; all changes must go through a PR.
+- New development branches off `master` as `slave`. If `slave` is already taken, use
+  continent-prefixed names, ordered by descending name length: `america-slave`, `oceania-slave`,
+  `africa-slave`, `europe-slave`, `asia-slave`.
+- When development is done, open a PR targeting `master`; after CI passes and the merge completes,
+  delete the development branch.
+- CI (`.github/workflows/ci-cd.yml`) runs only on pushes and PRs to `master` (development branches
+  do not trigger CI); it must pass before merging into `master`.
+- Whether to tag a release and which version number (`vX.Y.Z`) to use is decided based on the
+  changes made.
 
 ## Output Language
 

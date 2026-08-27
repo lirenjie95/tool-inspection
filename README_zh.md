@@ -1,5 +1,7 @@
 # 服务器巡检脚本（Agent-Client 架构）
 
+[![codecov](https://codecov.io/gh/lirenjie95/tool-inspection/branch/master/graph/badge.svg)](https://codecov.io/gh/lirenjie95/tool-inspection)
+
 针对内网 Windows/Linux 服务器的轻量级巡检工具，采用 **Agent-Client** 模式，
 无需 SSH/WinRM/WMI 等复杂远程协议。
 
@@ -351,6 +353,32 @@ python -m coverage report --include="server/*,client/*" -m
 
 > 提示：`tests/test_server.py` 中的 HTTP Handler 测试会启动真实 HTTP 服务，
 > 使用临时端口，无需手动启动 Agent。
+
+CI 工作流（`.github/workflows/ci-cd.yml`）会运行相同的覆盖率命令，当**行覆盖率或分支覆盖率低于 50%** 时构建失败。
+
+### Codecov
+
+CI 的覆盖率结果会通过 `codecov/codecov-action` 上传到 [Codecov](https://codecov.io/gh/lirenjie95/tool-inspection)，
+可在 Codecov 界面查看行/分支覆盖率趋势和逐文件覆盖率。本文件顶部的 badge 展示的是 `master` 分支的覆盖率。
+
+## Lint
+
+CI 会在每个合入 `master` 的 PR 上运行 flake8，推送前请先在本地执行：
+
+```bash
+pip install flake8
+flake8 client/ server/ scripts/ tests/ --max-line-length=250 --extend-ignore=E402
+```
+
+## 开发流程
+
+- 主分支固定为 `master`，受分支保护，所有变更必须通过 PR 合入。
+- 新开发从 `master` 检出 `slave` 分支；如果 `slave` 已被占用，则依次使用大洲名字在前的分支名，
+  大洲名字母越多越优先：`america-slave`、`oceania-slave`、`africa-slave`、`europe-slave`、`asia-slave`。
+- 开发完毕后提 PR 到 `master`，CI 通过并合并后删除该开发分支。
+- CI（`.github/workflows/ci-cd.yml`）只在 `master` 的 push 和 PR 上运行（开发分支不触发 CI），
+  合入 `master` 前必须通过。
+- 是否打 tag 以及 tag 版本号（`vX.Y.Z`）根据每次修改的内容决定。
 
 ## 输出语言
 
