@@ -363,22 +363,10 @@ CI 的覆盖率结果会通过 `codecov/codecov-action` 上传到 [Codecov](http
 
 ## Lint
 
-CI 会在每个合入 `master` 的 PR 上运行 flake8，推送前请先在本地执行：
-
 ```bash
 pip install flake8
 flake8 client/ server/ scripts/ tests/ --max-line-length=250 --extend-ignore=E402
 ```
-
-## 开发流程
-
-- 主分支固定为 `master`，受分支保护，所有变更必须通过 PR 合入。
-- 新开发从 `master` 检出 `slave` 分支；如果 `slave` 已被占用，则依次使用大洲名字在前的分支名，
-  大洲名字母越多越优先：`america-slave`、`oceania-slave`、`africa-slave`、`europe-slave`、`asia-slave`。
-- 开发完毕后提 PR 到 `master`，CI 通过并合并后删除该开发分支。
-- CI（`.github/workflows/ci-cd.yml`）只在 `master` 的 push 和 PR 上运行（开发分支不触发 CI），
-  合入 `master` 前必须通过。
-- 是否打 tag 以及 tag 版本号（`vX.Y.Z`）根据每次修改的内容决定。
 
 ## 输出语言
 
