@@ -75,6 +75,17 @@ jobs:
           print(f'PASS: Line coverage {line:.1f}%, Branch coverage {branch:.1f}%')
           "
 
+      - name: Generate coverage XML
+        run: |
+          python -m coverage xml --include="server/*,client/*" -o coverage.xml
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: 6483a7fb-976f-46d7-8640-ed76d61a68c8
+          files: coverage.xml
+          fail_ci_if_error: false
+
   build-linux:
     name: Build Linux Executable
     needs: [lint, test]
