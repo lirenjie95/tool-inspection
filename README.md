@@ -6,7 +6,6 @@
 [![downloads](https://img.shields.io/github/downloads/lirenjie95/tool-inspection/total)](https://github.com/lirenjie95/tool-inspection/releases)
 [![python](https://img.shields.io/badge/python-%3E%3D3.7-blue)](https://www.python.org/)
 [![platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux-blue)](#)
-[![lint](https://img.shields.io/badge/lint-flake8-blue)](#)
 [![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 [中文文档](README_zh.md)
