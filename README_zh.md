@@ -1,5 +1,7 @@
 # 服务器巡检脚本（Agent-Client 架构）
 
+[![codecov](https://codecov.io/gh/lirenjie95/tool-inspection/branch/master/graph/badge.svg)](https://codecov.io/gh/lirenjie95/tool-inspection)
+
 针对内网 Windows/Linux 服务器的轻量级巡检工具，采用 **Agent-Client** 模式，
 无需 SSH/WinRM/WMI 等复杂远程协议。
 
@@ -351,6 +353,20 @@ python -m coverage report --include="server/*,client/*" -m
 
 > 提示：`tests/test_server.py` 中的 HTTP Handler 测试会启动真实 HTTP 服务，
 > 使用临时端口，无需手动启动 Agent。
+
+CI 工作流（`.github/workflows/ci-cd.yml`）会运行相同的覆盖率命令，当**行覆盖率或分支覆盖率低于 50%** 时构建失败。
+
+### Codecov
+
+CI 的覆盖率结果会通过 `codecov/codecov-action` 上传到 [Codecov](https://codecov.io/gh/lirenjie95/tool-inspection)，
+可在 Codecov 界面查看行/分支覆盖率趋势和逐文件覆盖率。本文件顶部的 badge 展示的是 `master` 分支的覆盖率。
+
+## Lint
+
+```bash
+pip install flake8
+flake8 client/ server/ scripts/ tests/ --max-line-length=250 --extend-ignore=E402
+```
 
 ## 输出语言
 
