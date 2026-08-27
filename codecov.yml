@@ -1,0 +1,14 @@
+coverage:
+  status:
+    project:
+      default:
+        target: 50%
+        range: 50..100
+    patch:
+      default:
+        # Patch coverage is informational only; do not block PRs on it.
+        informational: true
+
+comment:
+  layout: "reach, diff, flags, files"
+  behavior: default
