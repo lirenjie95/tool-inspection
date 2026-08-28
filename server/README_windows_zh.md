@@ -31,6 +31,7 @@ nssm start InspectionAgent
 
 - `agent.py` — HTTP 服务入口（无需修改）
 - `services/` — 巡检服务扩展目录
+- `config.example.json` — 数据库巡检配置示例（可选）
 - `requirements.txt` — 零第三方依赖
 - `README.md` / `README_zh.md` — 本指南
 
@@ -175,6 +176,7 @@ python scripts/build_windows.py
 | disks | list | 磁盘列表，含 DeviceID, FreeSpaceGB, SizeGB；客户端会汇总所有磁盘的 FreeSpaceGB 进行总空间阈值判断 |
 | cpu | dict | CPU 使用率，含 usage_percent |
 | memory | dict | 内存使用情况，含 total_mb, free_mb, used_percent |
+| database | dict | 数据库巡检结果（可选，配置了 config.json 的 DATABASE 段时返回，见下文「数据库巡检（可选）」） |
 
 ### GET /ping
 
@@ -183,6 +185,25 @@ python scripts/build_windows.py
 ```json
 {"status": "ok"}
 ```
+
+## 数据库巡检（可选）
+
+在 `agent.py` 同目录放置 `config.json`（可参考 `config.example.json`），其中包含 `DATABASE` 段时自动启用 Oracle 数据库巡检；无此文件则自动跳过，不影响无数据库的服务器。
+
+**配置项：**
+
+| 字段 | 说明 | 默认值 |
+|------|------|--------|
+| LISTENER_LOG_PATHS | 监听日志文件路径列表，逐个判断大小 | 无 |
+| LOG_THRESHOLD_GB | 日志大小阈值（GB），超过判定异常 | 4 |
+| SERVICE_NAME_WINDOWS | Windows 下 Oracle 服务名（Get-Service 查询，兼容 PowerShell 2.0） | OracleServiceORCL |
+| PROCESS_NAME_LINUX | Linux 下 Oracle 进程名（ps 查询） | pmon |
+| BACKUP_DIR | 备份目录，检查 `.dmp` 备份文件 | 无 |
+| BACKUP_MAX_AGE_DAYS | 备份有效时间窗口（天），需存在窗口内的非空 `.dmp` 文件 | 1 |
+| STORAGE_THRESHOLD_GB | 存储空间阈值（GB），检查日志与备份目录所在磁盘余量 | 30 |
+| SQLPLUS_CONNECT | sqlplus 连接串，用于 `v$lock` 锁死检测；留空则跳过该项 | 无 |
+
+每项检查返回 `status`（`ok` / `warning` / `unknown`）与 `detail`。`unknown` 表示该项被跳过或无法检测（如未配置连接串、sqlplus 不可用），客户端不产生告警。
 
 ## 扩展服务
 

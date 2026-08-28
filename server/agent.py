@@ -31,14 +31,17 @@ Windows 后台运行建议 / Suggestions for running on Windows in the backgroun
 """
 
 import argparse
+import functools
 import json
 import logging
+import os
 import platform
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 
 from services.disk import collect as collect_disk
 from services.cpu import collect as collect_cpu
 from services.memory import collect as collect_memory
+from services.database import collect as collect_database
 
 # 如需启用 IIS 检查，取消下一行注释
 # To enable IIS checking, uncomment the next line
@@ -59,6 +62,7 @@ TRANSLATIONS = {
         "lang_help": "输出语言 (默认: zh)",
         "collect_service_failed": "采集服务 {name} 失败: {error}",
         "health_request_error": "处理 /health 请求时发生错误: {error}",
+        "config_load_failed": "加载配置文件失败: {error}",
         "agent_started": "Agent 已启动，监听 {url}",
         "press_ctrl_c_to_stop": "按 Ctrl+C 停止",
         "agent_stopping": "Agent 正在停止...",
@@ -71,6 +75,7 @@ TRANSLATIONS = {
         "lang_help": "Output language (default: zh)",
         "collect_service_failed": "Collector {name} failed: {error}",
         "health_request_error": "Error handling /health request: {error}",
+        "config_load_failed": "Failed to load config file: {error}",
         "agent_started": "Agent started, listening on {url}",
         "press_ctrl_c_to_stop": "Press Ctrl+C to stop",
         "agent_stopping": "Agent is stopping...",
@@ -132,6 +137,16 @@ def get_health_data(lang=None):
         "memory": _safe_collect("memory", collect_memory, lang=lang),
     }
 
+    # 数据库巡检为可选服务：仅当 config.json 配置了 DATABASE 段时启用
+    # Database inspection is optional: enabled only when config.json has a DATABASE section
+    db_config = load_database_config()
+    if db_config:
+        data["database"] = _safe_collect(
+            "database",
+            functools.partial(collect_database, config=db_config),
+            lang=lang,
+        )
+
     # 扩展点：新增服务在此加入返回数据
     # Extension point: add new services to the returned data here
     # try:
@@ -140,6 +155,26 @@ def get_health_data(lang=None):
     #     data["iis"] = {"error": str(e)}
 
     return data
+
+
+# 可选配置文件路径（与 agent.py 同目录）/ Optional config file path (next to agent.py)
+CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
+
+
+def load_database_config():
+    """加载 config.json 中的 DATABASE 配置段；无文件或无该段时返回 None。
+
+    Load the DATABASE section from config.json; returns None when the file
+    or the section does not exist.
+    """
+    if not os.path.isfile(CONFIG_PATH):
+        return None
+    try:
+        with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+            return json.load(f).get("DATABASE")
+    except Exception as e:
+        logger.warning(t("config_load_failed", error=e))
+        return None
 
 
 class HealthHandler(BaseHTTPRequestHandler):

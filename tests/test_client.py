@@ -425,6 +425,67 @@ class TestInspectServer(unittest.TestCase):
         lines, warnings = inspect_server(srv, data, disk_threshold_gb=30)
         self.assertIn("192.168.1.10 (192.168.1.10)", lines[0])
 
+    def test_database_all_ok(self):
+        """测试数据库巡检全部正常时展示结果且无告警
+
+        Test database inspection results are shown with no warnings when all ok.
+        """
+        srv = {"ip": "192.168.1.20", "port": 5000, "name": "db-01", "role": "db"}
+        data = {
+            "_http_ok": True,
+            "status": "running",
+            "disks": [{"DeviceID": "D:", "FreeSpaceGB": 50, "SizeGB": 100}],
+            "database": {
+                "listener_log": {"status": "ok", "detail": "listener.log 1GB"},
+                "service": {"status": "ok", "detail": "running"},
+                "deadlock": {"status": "ok", "detail": "no blocking locks"},
+                "storage": {"status": "ok", "detail": "50GB free"},
+                "backup": {"status": "ok", "detail": "backup.dmp"},
+            },
+        }
+        lines, warnings = inspect_server(srv, data, disk_threshold_gb=30)
+        self.assertTrue(any("数据库巡检" in line for line in lines))
+        self.assertEqual(len(warnings), 0)
+
+    def test_database_warning(self):
+        """测试数据库巡检异常时产生告警
+
+        Test abnormal database checks produce warnings.
+        """
+        srv = {"ip": "192.168.1.20", "port": 5000, "name": "db-01", "role": "db"}
+        data = {
+            "_http_ok": True,
+            "status": "running",
+            "disks": [{"DeviceID": "D:", "FreeSpaceGB": 50, "SizeGB": 100}],
+            "database": {
+                "listener_log": {"status": "warning", "detail": "listener.log 5GB > 4GB"},
+                "service": {"status": "ok", "detail": "running"},
+                "deadlock": {"status": "unknown", "detail": "sqlplus not available"},
+                "storage": {"status": "ok", "detail": "50GB free"},
+                "backup": {"status": "warning", "detail": "no recent backup"},
+            },
+        }
+        lines, warnings = inspect_server(srv, data, disk_threshold_gb=30)
+        self.assertEqual(len(warnings), 2)
+        self.assertTrue(any("数据库巡检" in w for w in warnings))
+
+    def test_database_unknown_not_warning(self):
+        """测试 unknown 状态不产生告警
+
+        Test unknown status does not produce warnings.
+        """
+        srv = {"ip": "192.168.1.20", "port": 5000, "name": "db-01", "role": "db"}
+        data = {
+            "_http_ok": True,
+            "status": "running",
+            "disks": [{"DeviceID": "D:", "FreeSpaceGB": 50, "SizeGB": 100}],
+            "database": {
+                "deadlock": {"status": "unknown", "detail": "not configured"},
+            },
+        }
+        lines, warnings = inspect_server(srv, data, disk_threshold_gb=30)
+        self.assertEqual(len(warnings), 0)
+
 
 class TestRunInspection(unittest.TestCase):
     """测试 run_inspection 完整流程
