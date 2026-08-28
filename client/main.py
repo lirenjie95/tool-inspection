@@ -53,6 +53,16 @@ TRANSLATIONS = {
         "app_role": "应用服务器巡检",
         "db_role": "数据库服务器巡检",
         "disk_collect_failed": "磁盘采集失败: {error}",
+        "db_inspection": "数据库巡检",
+        "db_check_listener_log": "监听日志",
+        "db_check_service": "数据库服务",
+        "db_check_deadlock": "锁死检测",
+        "db_check_storage": "存储空间",
+        "db_check_backup": "备份",
+        "db_status_ok": "正常",
+        "db_status_warning": "异常",
+        "db_status_unknown": "未知",
+        "db_warning_detail": "{name} ({ip}): 数据库巡检异常: {check}",
     },
     "en": {
         "server_inspection_start": "Server Inspection Started",
@@ -78,6 +88,16 @@ TRANSLATIONS = {
         "app_role": "App Server Inspection",
         "db_role": "DB Server Inspection",
         "disk_collect_failed": "Disk collection failed: {error}",
+        "db_inspection": "Database Inspection",
+        "db_check_listener_log": "Listener log",
+        "db_check_service": "Database service",
+        "db_check_deadlock": "Deadlock check",
+        "db_check_storage": "Storage",
+        "db_check_backup": "Backup",
+        "db_status_ok": "OK",
+        "db_status_warning": "Abnormal",
+        "db_status_unknown": "Unknown",
+        "db_warning_detail": "{name} ({ip}): database inspection abnormal: {check}",
     },
 }
 
@@ -184,6 +204,26 @@ def format_metrics(data: dict, lang: str = DEFAULT_LANG) -> str:
     return ", ".join(items) if items else ""
 
 
+def format_database_lines(database: dict, name: str, ip: str, lang: str = DEFAULT_LANG) -> tuple:
+    """格式化数据库巡检结果，返回 (lines, warnings)。
+
+    Format database inspection results and return (lines, warnings).
+    """
+    lines = [f"  -> {t('db_inspection', lang)}:"]
+    warnings = []
+    for key in ("listener_log", "service", "deadlock", "storage", "backup"):
+        check = database.get(key)
+        if not isinstance(check, dict):
+            continue
+        status = check.get("status", "unknown")
+        label = t(f"db_check_{key}", lang)
+        status_label = t(f"db_status_{status}", lang)
+        lines.append(f"  ->   {label}: {status_label} ({check.get('detail', '')})")
+        if status == "warning":
+            warnings.append(t("db_warning_detail", lang, name=name, ip=ip, check=label))
+    return lines, warnings
+
+
 def check_web(url_config: dict, lang: str = DEFAULT_LANG) -> dict:
     """检查网页可用性（跟随重定向）/ Check web page availability (follows redirects)."""
     try:
@@ -265,6 +305,11 @@ def inspect_server(
                 warnings.append(t("disk_warning_detail", lang, name=name, ip=srv["ip"]))
             else:
                 lines.append(f"  -> {t('disk_check_passed', lang)}")
+        database = data.get("database")
+        if isinstance(database, dict):
+            db_lines, db_warnings = format_database_lines(database, name, srv["ip"], lang=lang)
+            lines.extend(db_lines)
+            warnings.extend(db_warnings)
     else:
         error = data.get("error", t("agent_error", lang))
         lines.append(f"{name} ({srv['ip']}) {t('web_status_prefix', lang)}: {error}")

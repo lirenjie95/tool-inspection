@@ -463,5 +463,242 @@ class TestRunServer(unittest.TestCase):
             mock_server.serve_forever.assert_called_once()
 
 
+import tempfile
+import time
+
+from services.database import collect as collect_database
+
+
+def _db_config(**overrides):
+    """构造数据库巡检配置 / Build a database inspection config."""
+    config = {
+        "LISTENER_LOG_PATHS": [],
+        "LOG_THRESHOLD_GB": 4,
+        "SERVICE_NAME_WINDOWS": "OracleServiceORCL",
+        "PROCESS_NAME_LINUX": "pmon",
+        "BACKUP_DIR": "",
+        "BACKUP_MAX_AGE_DAYS": 1,
+        "STORAGE_THRESHOLD_GB": 30,
+    }
+    config.update(overrides)
+    return config
+
+
+class TestDatabaseListenerLog(unittest.TestCase):
+    """测试监听日志大小检查 / Tests for the listener log size check."""
+
+    def test_log_size_ok(self):
+        """日志未超阈值时判定正常 / Log within threshold is ok."""
+        with tempfile.NamedTemporaryFile(suffix=".log") as f:
+            f.write(b"x" * 1024)
+            f.flush()
+            config = _db_config(LISTENER_LOG_PATHS=[f.name])
+            result = collect_database(config=config)
+        self.assertEqual(result["listener_log"]["status"], "ok")
+
+    def test_log_size_exceeds_threshold(self):
+        """日志超阈值时判定异常 / Log exceeding threshold is a warning."""
+        with tempfile.NamedTemporaryFile(suffix=".log") as f:
+            config = _db_config(LISTENER_LOG_PATHS=[f.name], LOG_THRESHOLD_GB=4)
+            five_gb = 5 * 1024 ** 3
+            with patch("os.path.getsize", return_value=five_gb):
+                result = collect_database(config=config)
+        self.assertEqual(result["listener_log"]["status"], "warning")
+
+    def test_log_file_missing(self):
+        """日志文件不存在时判定异常 / Missing log file is a warning."""
+        config = _db_config(LISTENER_LOG_PATHS=["/nonexistent/listener.log"])
+        result = collect_database(config=config)
+        self.assertEqual(result["listener_log"]["status"], "warning")
+
+    def test_multiple_logs_checked_individually(self):
+        """配置多个日志时逐个判断 / Multiple logs are checked individually."""
+        with tempfile.NamedTemporaryFile(suffix=".log") as f:
+            config = _db_config(LISTENER_LOG_PATHS=[f.name, "/nonexistent/other.log"])
+            result = collect_database(config=config)
+        self.assertEqual(result["listener_log"]["status"], "warning")
+
+
+class TestDatabaseServiceStatus(unittest.TestCase):
+    """测试数据库服务状态检查 / Tests for the database service status check."""
+
+    def test_service_running_linux(self):
+        """Linux 下进程存在判定正常 / Running process on Linux is ok."""
+        config = _db_config()
+        with patch("platform.system", return_value="Linux"):
+            with patch("subprocess.check_output", return_value="oracle 1234 ora_pmon_ORCL"):
+                result = collect_database(config=config)
+        self.assertEqual(result["service"]["status"], "ok")
+
+    def test_service_not_running_linux(self):
+        """Linux 下进程不存在判定异常 / Missing process on Linux is a warning."""
+        config = _db_config()
+        with patch("platform.system", return_value="Linux"):
+            with patch("subprocess.check_output", return_value="root 1 init"):
+                result = collect_database(config=config)
+        self.assertEqual(result["service"]["status"], "warning")
+
+    def test_service_running_windows(self):
+        """Windows 下服务 Running 判定正常 / Running service on Windows is ok."""
+        config = _db_config()
+        with patch("platform.system", return_value="Windows"):
+            with patch("subprocess.run") as mock_run:
+                mock_run.return_value = MagicMock(returncode=0, stdout="Running\r\n", stderr="")
+                result = collect_database(config=config)
+        self.assertEqual(result["service"]["status"], "ok")
+
+    def test_service_stopped_windows(self):
+        """Windows 下服务停止判定异常 / Stopped service on Windows is a warning."""
+        config = _db_config()
+        with patch("platform.system", return_value="Windows"):
+            with patch("subprocess.run") as mock_run:
+                mock_run.return_value = MagicMock(returncode=0, stdout="Stopped\r\n", stderr="")
+                result = collect_database(config=config)
+        self.assertEqual(result["service"]["status"], "warning")
+
+
+class TestDatabaseDeadlock(unittest.TestCase):
+    """测试数据库锁死检查 / Tests for the database deadlock check."""
+
+    def test_no_deadlock(self):
+        """v$lock 无阻塞时判定正常 / No blocking locks is ok."""
+        config = _db_config(SQLPLUS_CONNECT="sys/pwd@ORCL as sysdba")
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0, stdout="\n  0\n", stderr="")
+            result = collect_database(config=config)
+        self.assertEqual(result["deadlock"]["status"], "ok")
+
+    def test_deadlock_detected(self):
+        """v$lock 存在阻塞时判定异常 / Blocking locks are a warning."""
+        config = _db_config(SQLPLUS_CONNECT="sys/pwd@ORCL as sysdba")
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0, stdout="\n  2\n", stderr="")
+            result = collect_database(config=config)
+        self.assertEqual(result["deadlock"]["status"], "warning")
+
+    def test_deadlock_not_configured(self):
+        """未配置连接串时降级为 unknown / Missing connect string degrades to unknown."""
+        config = _db_config()
+        result = collect_database(config=config)
+        self.assertEqual(result["deadlock"]["status"], "unknown")
+
+    def test_deadlock_sqlplus_unavailable(self):
+        """sqlplus 不可用时降级为 unknown / Missing sqlplus degrades to unknown."""
+        config = _db_config(SQLPLUS_CONNECT="sys/pwd@ORCL as sysdba")
+        with patch("subprocess.run", side_effect=FileNotFoundError("sqlplus")):
+            result = collect_database(config=config)
+        self.assertEqual(result["deadlock"]["status"], "unknown")
+
+
+class TestDatabaseBackup(unittest.TestCase):
+    """测试备份有效性检查 / Tests for the backup effectiveness check."""
+
+    def _make_dmp(self, dirpath, name="backup.dmp", content=b"data"):
+        path = os.path.join(dirpath, name)
+        with open(path, "wb") as f:
+            f.write(content)
+        return path
+
+    def test_backup_ok(self):
+        """存在最近非空 .dmp 判定正常 / Recent non-empty .dmp is ok."""
+        with tempfile.TemporaryDirectory() as d:
+            self._make_dmp(d)
+            config = _db_config(BACKUP_DIR=d)
+            result = collect_database(config=config)
+        self.assertEqual(result["backup"]["status"], "ok")
+
+    def test_backup_no_file(self):
+        """无 .dmp 文件判定异常 / No .dmp file is a warning."""
+        with tempfile.TemporaryDirectory() as d:
+            config = _db_config(BACKUP_DIR=d)
+            result = collect_database(config=config)
+        self.assertEqual(result["backup"]["status"], "warning")
+
+    def test_backup_old_file(self):
+        """备份文件过旧判定异常 / Stale backup file is a warning."""
+        with tempfile.TemporaryDirectory() as d:
+            path = self._make_dmp(d)
+            old = time.time() - 3 * 86400
+            os.utime(path, (old, old))
+            config = _db_config(BACKUP_DIR=d, BACKUP_MAX_AGE_DAYS=1)
+            result = collect_database(config=config)
+        self.assertEqual(result["backup"]["status"], "warning")
+
+    def test_backup_empty_file(self):
+        """空备份文件判定异常 / Empty backup file is a warning."""
+        with tempfile.TemporaryDirectory() as d:
+            self._make_dmp(d, content=b"")
+            config = _db_config(BACKUP_DIR=d)
+            result = collect_database(config=config)
+        self.assertEqual(result["backup"]["status"], "warning")
+
+
+class TestDatabaseStorage(unittest.TestCase):
+    """测试存储空间检查 / Tests for the storage sufficiency check."""
+
+    def _config_with_paths(self, d):
+        return _db_config(LISTENER_LOG_PATHS=[os.path.join(d, "listener.log")], BACKUP_DIR=d)
+
+    def test_storage_ok(self):
+        """磁盘余量充足判定正常 / Sufficient free space is ok."""
+        with tempfile.TemporaryDirectory() as d:
+            config = self._config_with_paths(d)
+            disks = [{"DeviceID": "C:", "FreeSpaceGB": 100, "SizeGB": 200}]
+            with patch("services.database.collect_disk", return_value=disks):
+                result = collect_database(config=config)
+        self.assertEqual(result["storage"]["status"], "ok")
+
+    def test_storage_low(self):
+        """磁盘余量不足判定异常 / Insufficient free space is a warning."""
+        with tempfile.TemporaryDirectory() as d:
+            config = self._config_with_paths(d)
+            disks = [{"DeviceID": "C:", "FreeSpaceGB": 10, "SizeGB": 200}]
+            with patch("services.database.collect_disk", return_value=disks):
+                result = collect_database(config=config)
+        self.assertEqual(result["storage"]["status"], "warning")
+
+
+class TestDatabaseCollectStructure(unittest.TestCase):
+    """测试 collect 返回结构 / Tests for the collect() return structure."""
+
+    def test_collect_returns_all_checks(self):
+        """返回五项检查且各含 status/detail / Returns five checks with status/detail."""
+        with tempfile.TemporaryDirectory() as d:
+            config = _db_config(
+                LISTENER_LOG_PATHS=[os.path.join(d, "listener.log")],
+                BACKUP_DIR=d,
+            )
+            result = collect_database(config=config)
+        for key in ("listener_log", "service", "deadlock", "storage", "backup"):
+            self.assertIn(key, result)
+            self.assertIn("status", result[key])
+            self.assertIn("detail", result[key])
+            self.assertIn(result[key]["status"], ("ok", "warning", "unknown"))
+
+    def test_collect_english_detail(self):
+        """英文输出 / English output is supported."""
+        config = _db_config()
+        result = collect_database(lang="en", config=config)
+        self.assertIn("status", result["service"])
+
+
+class TestAgentDatabaseWiring(unittest.TestCase):
+    """测试 agent 按配置启用数据库巡检 / Tests for config-driven database wiring."""
+
+    def test_health_without_config_has_no_database_key(self):
+        """无 config.json 时不返回 database 字段 / No database key without config."""
+        with patch("agent.load_database_config", return_value=None):
+            data = get_health_data()
+        self.assertNotIn("database", data)
+
+    def test_health_with_config_includes_database(self):
+        """有 config.json 时返回 database 字段 / Config present includes database key."""
+        fake_result = {"service": {"status": "ok", "detail": "x"}}
+        with patch("agent.load_database_config", return_value=_db_config()):
+            with patch("agent.collect_database", return_value=fake_result):
+                data = get_health_data()
+        self.assertEqual(data["database"], fake_result)
+
+
 if __name__ == "__main__":
     unittest.main()

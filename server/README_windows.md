@@ -31,6 +31,7 @@ Done — the Agent is now ready for the inspection client to query. For firewall
 
 - `agent.py` — HTTP service entry point (no modification needed)
 - `services/` — Inspection service extension directory
+- `config.example.json` — Database inspection config example (optional)
 - `requirements.txt` — Zero third-party dependencies
 - `README.md` / `README_zh.md` — This guide
 
@@ -175,6 +176,7 @@ Returns the current health status of the server.
 | disks | list | Disk list containing DeviceID, FreeSpaceGB, SizeGB; the client sums FreeSpaceGB across all disks for total space threshold evaluation |
 | cpu | dict | CPU usage, containing usage_percent |
 | memory | dict | Memory usage, containing total_mb, free_mb, used_percent |
+| database | dict | Database inspection results (optional, returned when the DATABASE section of config.json is configured; see "Database Inspection (Optional)" below) |
 
 ### GET /ping
 
@@ -183,6 +185,25 @@ Lightweight liveness probe; does not perform any collection, returns:
 ```json
 {"status": "ok"}
 ```
+
+## Database Inspection (Optional)
+
+Place a `config.json` next to `agent.py` (see `config.example.json`). When it contains a `DATABASE` section, Oracle database inspection is enabled automatically; without the file it is skipped, so servers without a database are unaffected.
+
+**Options:**
+
+| Field | Description | Default |
+|-------|-------------|---------|
+| LISTENER_LOG_PATHS | Listener log file paths; each is checked individually | None |
+| LOG_THRESHOLD_GB | Log size threshold (GB); exceeding it is flagged abnormal | 4 |
+| SERVICE_NAME_WINDOWS | Oracle service name on Windows (queried via Get-Service, PowerShell 2.0 compatible) | OracleServiceORCL |
+| PROCESS_NAME_LINUX | Oracle process name on Linux (checked via ps) | pmon |
+| BACKUP_DIR | Backup directory; `.dmp` backup files are checked | None |
+| BACKUP_MAX_AGE_DAYS | Backup validity window (days); a non-empty `.dmp` within the window is required | 1 |
+| STORAGE_THRESHOLD_GB | Storage threshold (GB) for the disks holding the log and backup directory | 30 |
+| SQLPLUS_CONNECT | sqlplus connect string for `v$lock` deadlock detection; leave empty to skip this check | None |
+
+Each check returns `status` (`ok` / `warning` / `unknown`) and `detail`. `unknown` means the check was skipped or could not run (e.g. no connect string configured or sqlplus unavailable) and does not raise an alert on the client.
 
 ## Extending Services
 

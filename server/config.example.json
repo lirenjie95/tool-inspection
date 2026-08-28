@@ -1,0 +1,14 @@
+{
+  "DATABASE": {
+    "LISTENER_LOG_PATHS": [
+      "D:/app/oracle/diag/tnslsnr/HOSTNAME/listener/trace/listener.log"
+    ],
+    "LOG_THRESHOLD_GB": 4,
+    "SERVICE_NAME_WINDOWS": "OracleServiceORCL",
+    "PROCESS_NAME_LINUX": "pmon",
+    "BACKUP_DIR": "D:/backup",
+    "BACKUP_MAX_AGE_DAYS": 1,
+    "STORAGE_THRESHOLD_GB": 30,
+    "SQLPLUS_CONNECT": ""
+  }
+}
