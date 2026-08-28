@@ -639,12 +639,20 @@ class TestDatabaseStorage(unittest.TestCase):
     def _config_with_paths(self, d):
         return _db_config(LISTENER_LOG_PATHS=[os.path.join(d, "listener.log")], BACKUP_DIR=d)
 
+    def _disks_for(self, d, free_gb):
+        """构造与当前平台临时目录匹配的磁盘列表（Windows 盘符 / Linux 根挂载点）。
+
+        Build a disk list matching the temp dir on the current platform
+        (Windows drive letter / Linux root mount point).
+        """
+        device = os.path.splitdrive(d)[0] or "/"
+        return [{"DeviceID": device, "FreeSpaceGB": free_gb, "SizeGB": 200}]
+
     def test_storage_ok(self):
         """磁盘余量充足判定正常 / Sufficient free space is ok."""
         with tempfile.TemporaryDirectory() as d:
             config = self._config_with_paths(d)
-            disks = [{"DeviceID": "C:", "FreeSpaceGB": 100, "SizeGB": 200}]
-            with patch("services.database.collect_disk", return_value=disks):
+            with patch("services.database.collect_disk", return_value=self._disks_for(d, 100)):
                 result = collect_database(config=config)
         self.assertEqual(result["storage"]["status"], "ok")
 
@@ -652,8 +660,7 @@ class TestDatabaseStorage(unittest.TestCase):
         """磁盘余量不足判定异常 / Insufficient free space is a warning."""
         with tempfile.TemporaryDirectory() as d:
             config = self._config_with_paths(d)
-            disks = [{"DeviceID": "C:", "FreeSpaceGB": 10, "SizeGB": 200}]
-            with patch("services.database.collect_disk", return_value=disks):
+            with patch("services.database.collect_disk", return_value=self._disks_for(d, 10)):
                 result = collect_database(config=config)
         self.assertEqual(result["storage"]["status"], "warning")
 
